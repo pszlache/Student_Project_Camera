@@ -1,6 +1,7 @@
-import cv2
 import time
 from camera.usb_camera import USBCamera
+from motion.motion_detector import MotionDetector
+from utils.snapshot import save_snapshot
 from config import *
 
 def main():
@@ -12,7 +13,14 @@ def main():
     )
 
     cam.start()
-    print("Starting Camera..")
+
+    motion = MotionDetector(
+        BLUR_SIZE,
+        MIN_DELTA,
+        MOTION_THRESHOLD
+    )
+
+    last_snapshot = 0
 
     try:
         while True:
@@ -20,16 +28,17 @@ def main():
             if frame is None:
                 continue
 
-            cv2.imshow("Camera test", frame)
+            if motion.detect(frame):
+                now = time.time()
+                if now - last_snapshot > SNAPSHOT_COOLDOWN:
+                    print("Ruch Wykryty")
+                    save_snapshot(frame)
+                    last_snapshot = now
 
-            if cv2.waitKey(1) & 0xFF == 27:
-                break
-
-            time.sleep(0.02)
+            time.sleep(0.05)
 
     finally:
         cam.stop()
-        cv2.destroyAllWindows()
 
 if __name__ == "__main__":
     main()
