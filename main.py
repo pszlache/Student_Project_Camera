@@ -1,19 +1,22 @@
 import time
 from camera.usb_camera import USBCamera
 from motion.motion_detector import MotionDetector
+from ai.person_detector import PersonDetector
 from utils.snapshot import save_snapshot
 from config import *
 
 def main():
+    # Camera Settings
     cam = USBCamera(
         CAMERA_INDEX,
-        FRAME_WIDITH,
+        FRAME_WIDTH,
         FRAME_HEIGHT,
         FPS
     )
 
     cam.start()
 
+    # Detection Settings
     motion = MotionDetector(
         BLUR_SIZE,
         MIN_DELTA,
@@ -22,6 +25,14 @@ def main():
 
     last_snapshot = 0
 
+    # AI Settings
+    detector = PersonDetector(
+        AI_MODEL_DIR,
+        AI_CONFIDENCE
+    )
+
+    ai_counter = 0
+
     try:
         while True:
             frame = cam.read()
@@ -29,16 +40,25 @@ def main():
                 continue
 
             if motion.detect(frame):
-                now = time.time()
-                if now - last_snapshot > SNAPSHOT_COOLDOWN:
-                    print("Ruch Wykryty")
-                    save_snapshot(frame)
-                    last_snapshot = now
+                ai_counter += 1
 
-            time.sleep(0.05)
+                # AI every N frames
+                if ai_counter % AI_FRAME_SKIP == 0:
+                    if detector.detect(frame):
+                        now = time.time()
+                        if now - last_snapshot > SNAPSHOT_COOLDOWN
+                        print("Human Detectet")
+                        save_snapshot(frame, prefix="person")
+                        last_snapshot = now
+        else:
+            # Nothing motion -> reset
+            ai_counter = 0
+        
+        time.sleep(0.05)
 
     finally:
         cam.stop()
 
+        
 if __name__ == "__main__":
     main()
