@@ -43,6 +43,7 @@ def main():
         while True:
             frame = cam.read()
             if frame is None:
+                time.sleep(0.01)
                 continue
 
             if motion.detect(frame):
@@ -52,15 +53,15 @@ def main():
                 if ai_counter % AI_FRAME_SKIP == 0:
                     if detector.detect(frame):
                         now = time.time()
-                        if now - last_snapshot > SNAPSHOT_COOLDOWN
-                        print("Human Detectet")
-                        save_snapshot(frame, prefix="person")
-                        last_snapshot = now
-        else:
-            # Nothing motion -> reset
-            ai_counter = 0
+                        if now - last_snapshot > SNAPSHOT_COOLDOWN:
+                            print("Human Detectet")
+                            save_snapshot(frame, prefix="person")
+                            last_snapshot = now
+            else:
+                # Nothing motion -> reset
+                ai_counter = 0
         
-        time.sleep(0.05)
+            time.sleep(0.05)
 
     finally:
         cam.stop()

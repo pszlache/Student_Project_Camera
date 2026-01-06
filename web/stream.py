@@ -18,19 +18,22 @@ def generate_frames():
             continue
 
         frame = shared_camera.read()
-        if fame is None:
+        if frame is None:
             continue
 
-        ret, buffer = cv2.imencode('.jpg', frame)
+        ret, buffer = cv2.imencode(
+            '.jpg',
+            frame,
+            [int(cv2.IMWRITE_JPEG_QUALITY), 70]
+            )
+        
         if not ret:
             continue
-
-        frame_bytes = buffer.tobytes()
 
         yield(
             b'--frame\r\n'
             b'Content-Type: image/jpeg\r\n\r\n' +
-            frame_bytes +
+            buffer.tobytes() +
             b'\r\n'
         )
 
@@ -41,7 +44,7 @@ def index():
         <head><title>Camera Stream</title></head>
         <body>
             <h1>Podgląd Kamery</h1>
-            <img src="/viedo">
+            <img src='/video'>
         </body>
     </html>
     '''
@@ -49,7 +52,7 @@ def index():
 def video():
     return Response(
         generate_frames(),
-        mimetype='multipart/x-mixed-replace; boundary=frame'
+        mimetype='multipart/x-mixed-replace;boundary=frame'
     )
 
 def start_stream():
