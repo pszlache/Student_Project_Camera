@@ -3,6 +3,7 @@ from camera.usb_camera import USBCamera
 from motion.motion_detector import MotionDetector
 from ai.person_detector import PersonDetector
 from utils.snapshot import save_snapshot
+from web.stream import start_stream, set_shared_camera
 from config import *
 
 def main():
@@ -15,6 +16,11 @@ def main():
     )
 
     cam.start()
+
+    # Local Streaming
+    set_shared_camera(cam)
+    start_stream()
+    print("Camera streaming on http://<IP_RPI>:5000")
 
     # Detection Settings
     motion = MotionDetector(
