@@ -5,20 +5,22 @@ import time
 
 app = Flask(__name__)
 
-shared_camera = None
+shared_cameras = {}
 
-def set_shared_camera(camera):
-    global shared_camera
-    shared_camera = camera
+def set_shared_cameras(cameras):
+    global shared_cameras
+    shared_cameras = cameras
 
-def generate_frames():
+def generate_frames(cam_id):
     while True:
-        if shared_camera is None:
+        cam = shared_cameras.get(cam_id)
+        if cam is None:
             time.sleep(0.1)
             continue
 
-        frame = shared_camera.read()
+        frame = cam.read()
         if frame is None:
+            time.sleep(0.01)
             continue
 
         ret, buffer = cv2.imencode(
@@ -41,17 +43,28 @@ def generate_frames():
 def index():
     return '''
     <html>
-        <head><title>Camera Stream</title></head>
         <body>
-            <h1>Podgląd Kamery</h1>
-            <img src='/video'>
+            <h1>Monitoring</h1>
+            <div style="display:flex;">
+                <div>
+                    <h3>FirstCam</h3>
+                    <img src='/video/0'>
+                </div>
+                <div>
+                    <h3>SecondCam</h3>
+                    <img src='/video/1'>
+                </div>
+            </div>
         </body>
     </html>
     '''
-@app.route('/video')
-def video():
+@app.route('/video/<int:cam_id>')
+def video(cam_id):
+    if cam_id not is shared_cameras:
+        return "Camera not found", 404
+    
     return Response(
-        generate_frames(),
+        generate_frames(cam_id),
         mimetype='multipart/x-mixed-replace;boundary=frame'
     )
 

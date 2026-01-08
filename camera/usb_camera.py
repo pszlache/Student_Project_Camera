@@ -5,6 +5,8 @@ import time
 class USBCamera:
     def __init__(self, index, width, height, fps):
         self.cap = cv2.VideoCapture(index, cv2.CAP_V4L2)
+        if not self.cap.isOpened():
+            raise RuntimeError(f"Cannot open camera {index}")
 
         self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
         self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
@@ -27,13 +29,14 @@ class USBCamera:
             if ret:
                 with self.lock:
                     self.frame = frame
+            else:
+                time.sleep(0.05)
+                continue
             time.sleep(0.01)
 
     def read(self):
         with self.lock:
-            if self.frame is None:
-                return None
-            return self.frame.copy()
+            return None if self.frame is None else self.frame.copy()
         
     def stop(self):
         self.running = False

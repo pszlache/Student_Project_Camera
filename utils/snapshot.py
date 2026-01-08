@@ -10,5 +10,6 @@ def save_snapshot(frame, prefix="motion"):
     filename = f"{prefix}_{ts}.jpg"
     path = os.path.join(SNAPSHOT_DIR, filename)
 
-    cv2.imwrite(path, frame)
-    return path
+    if cv2.imwrite(path, frame):
+        return path
+    return None
