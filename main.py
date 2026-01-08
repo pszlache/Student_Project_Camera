@@ -7,7 +7,7 @@ from web.stream import start_stream, set_shared_camera
 from config import *
 
 def main():
-    # Camera Settings
+    # Camera Setting
     cam = USBCamera(
         CAMERA_INDEX,
         FRAME_WIDTH,
@@ -16,6 +16,12 @@ def main():
     )
 
     cam.start()
+
+    # Presence Setting
+    presence_active = False
+    last_presence_time = 0
+
+    PRESENCE_TIMEOUT = 30 
 
     # Local Streaming
     set_shared_camera(cam)
@@ -45,21 +51,27 @@ def main():
             if frame is None:
                 time.sleep(0.01)
                 continue
-
+                
+            now = time.time()
             if motion.detect(frame):
                 ai_counter += 1
 
-                # AI every N frames
                 if ai_counter % AI_FRAME_SKIP == 0:
                     if detector.detect(frame):
-                        now = time.time()
-                        if now - last_snapshot > SNAPSHOT_COOLDOWN:
-                            print("Human Detectet")
-                            save_snapshot(frame, prefix="person")
-                            last_snapshot = now
+                        last_presence_time = now
+
+                        if not presence_active:
+                            presence_active = True
+                            print("Human Detectec")
+
+                            save_snapshot(frame, prefix="presence")
+
             else:
-                # Nothing motion -> reset
                 ai_counter = 0
+
+            if presence_active and (now - last_presence_time > PRESENCE_TIMEOUT):
+                presence_active = False
+                print("No presence")
         
             time.sleep(0.05)
 
