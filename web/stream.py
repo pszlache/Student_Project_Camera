@@ -1,4 +1,4 @@
-from flask import Flask, Response
+from flask import Flask, Response, stream_with_context
 import cv2
 import threading
 import time
@@ -60,12 +60,12 @@ def index():
     '''
 @app.route('/video/<int:cam_id>')
 def video(cam_id):
-    if cam_id not is shared_cameras:
+    if cam_id not in shared_cameras:
         return "Camera not found", 404
     
     return Response(
-        generate_frames(cam_id),
-        mimetype='multipart/x-mixed-replace;boundary=frame'
+        stream_with_context(generate_frames(cam_id)),
+        mimetype='multipart/x-mixed-replace; boundary=frame'
     )
 
 def start_stream():
