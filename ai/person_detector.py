@@ -38,5 +38,4 @@ class PersonDetector:
                 h_box = max(0, y2 - y1)
 
                 return (x, y, w_box, h_box)
-            
         return None
