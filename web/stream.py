@@ -14,19 +14,19 @@ def set_shared_cameras(cameras):
 
 def generate_frames(cam_id):
     while True:
-        cam = shared_cameras.get(cam_id)
-        if cam is None:
+        data = shared_cameras.get(cam_id)
+        if data is None:
             time.sleep(0.1)
             continue
 
-        frame = cam.read()
+        frame = data["camera"].read()
         if frame is None:
             time.sleep(0.01)
             continue
 
         overlay = draw_overlay(
             frame.copy(),
-            cam.presence_active
+            datap["presence_active"]
         )
 
         ret, buffer = cv2.imencode(
