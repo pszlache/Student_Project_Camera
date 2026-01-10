@@ -19,7 +19,7 @@ class PersonDetector:
             0.007843,
             (300, 300),
             127.5
-        ) 
+        )
 
         self.net.setInput(blob)
         detections = self.net.forward()
@@ -36,6 +36,7 @@ class PersonDetector:
                 y = max(0, y1)
                 w_box = max(0, x2 - x1)
                 h_box = max(0, y2 - y1)
-                
-            return (x, y, w_box, h_box)
+
+                return (x, y, w_box, h_box)
+            
         return None
