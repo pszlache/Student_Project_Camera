@@ -7,6 +7,7 @@ import time
 app = Flask(__name__)
 
 shared_cameras = {}
+
 def set_shared_cameras(cameras):
     global shared_cameras
     shared_cameras = cameras
@@ -23,8 +24,8 @@ def generate_frames(cam_id):
             time.sleep(0.01)
             continue
 
-        frame = draw_overlay(
-            frame,
+        overlay = draw_overlay(
+            frame.copy(),
             data["name"],
             data["presence_active"],
             data.get("last_bbox")
@@ -45,6 +46,8 @@ def generate_frames(cam_id):
             buffer.tobytes() +
             b'\r\n'
         )
+
+        time.sleep(0.02)
 
 @app.route('/')
 def index():
