@@ -38,6 +38,10 @@ class USBCamera:
         with self.lock:
             return None if self.frame is None else self.frame.copy()
         
+    def set_frame(self, frame):
+        with self.lock:
+            self.frame = frame
+        
     def stop(self):
         self.running = False
         time.sleep(0.1)

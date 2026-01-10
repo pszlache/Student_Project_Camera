@@ -117,6 +117,7 @@ def main():
                     data["name"],
                     data["presence_active"]
                 )
+                data["camera"].set_frame(overlay_frame)
             
             time.sleep(0.05)
 
