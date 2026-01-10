@@ -43,9 +43,8 @@ def main():
     PRESENCE_TIMEOUT = 30 
 
     # Local Streaming
-    set_shared_cameras(
-        {cid: data["camera"] for cid, data in cameras.items()}
-    )
+    set_shared_cameras(cameras)
+
     start_stream()
     print("Camera streaming on http://<IP_RPI>:5000")
 
@@ -67,6 +66,7 @@ def main():
 
                             if not data["presence_active"]:
                                 data["presence_active"] = True
+                                data["camera"].presence_active = True
                                 data["snapshot_taken"] = False
                                 data["snapshot_delay"] = 2
                                 print(f"{data['name']} - New Presence")
@@ -88,6 +88,7 @@ def main():
                     and now - data["last_presence_time"] > PRESENCE_TIMEOUT
                 ):
                     data["presence_active"] = False
+                    data["camera"].presence_active = False
                     data["snapshot_taken"] = False
                     print(f"{data['name']} - Presence Finish")
             

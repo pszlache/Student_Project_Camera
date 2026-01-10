@@ -1,4 +1,5 @@
 from flask import Flask, Response, stream_with_context
+from utils.overlay import draw_overlay
 import cv2
 import threading
 import time
@@ -23,9 +24,14 @@ def generate_frames(cam_id):
             time.sleep(0.01)
             continue
 
+        overlay = draw_overlay(
+            frame.copy(),
+            cam.presence_active
+        )
+
         ret, buffer = cv2.imencode(
             '.jpg',
-            frame,
+            overlay,
             [int(cv2.IMWRITE_JPEG_QUALITY), 70]
             )
         

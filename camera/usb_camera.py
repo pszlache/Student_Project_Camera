@@ -15,6 +15,7 @@ class USBCamera:
         self.frame = None
         self.running = False
         self.lock = threading.Lock()
+        self.presence_active = False
 
     def start(self):
         if self.running:
