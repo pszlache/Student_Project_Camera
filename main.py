@@ -3,7 +3,6 @@ from camera.usb_camera import USBCamera
 from motion.motion_detector import MotionDetector
 from ai.person_detector import PersonDetector
 from logs.db import init_db, log_presence_start, log_presence_end
-from utils.overlay import draw_overlay
 from utils.snapshot import save_snapshot
 from web.stream import start_stream, set_shared_cameras
 from config import *
@@ -51,9 +50,7 @@ def main():
     PRESENCE_TIMEOUT = 30 
 
     # Local Streaming
-    set_shared_cameras(
-        {cid: data["camera"] for cid, data in cameras.items()}
-    )
+    set_shared_cameras(cameras)
     start_stream()
     print("Camera streaming on http://<IP_RPI>:5000")
 
@@ -66,14 +63,16 @@ def main():
                 if frame is None:
                     time.sleep(0.01)
                     continue
-                
-                overlay_frame = frame.copy()
-
+                # MOTION
                 if data["motion"].detect(frame):
                     data["ai_counter"] += 1
-
+                
+                # AI FRAME
                     if data["ai_counter"] % AI_FRAME_SKIP == 0:
-                        if data["detector"].detect(frame):
+                        bbox = data["detector"].detect(frame)
+
+                        if bbox:
+                            data["last_bbox"] = bbox
                             data["last_presence_time"] = now
 
                             if not data["presence_active"]:
@@ -88,13 +87,14 @@ def main():
 
                                 if data["snapshot_delay"] <= 0:
                                     snapshot_path = save_snapshot(
-                                        overlay_frame,
+                                        frame,
                                         prefix=f"presence_cam{cam_id}"
                                     )
                                     data["last_snapshot_path"] = snapshot_path
                                     data["snapshot_taken"] = True
                 else:
                     data["ai_counter"] = 0
+                    data["last_bbox"] = None
 
                 if (
                     data["presence_active"]
@@ -111,14 +111,9 @@ def main():
 
                     data["event_id"] = None
                     data["last_snapshot_path"] = None
+                    data["last_bbox"] = None
                     print(f"{data['name']} - Presence Finish")
                 
-                overlay_frame = draw_overlay(
-                    overlay_frame,
-                    data["name"],
-                    data["presence_active"]
-                )
-            
             time.sleep(0.05)
 
     finally:

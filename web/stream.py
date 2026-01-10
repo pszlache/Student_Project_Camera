@@ -33,7 +33,7 @@ def generate_frames(cam_id):
 
         ret, buffer = cv2.imencode(
             '.jpg',
-            frame,
+            overlay,
             [int(cv2.IMWRITE_JPEG_QUALITY), 70]
             )
         
