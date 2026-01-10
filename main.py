@@ -4,9 +4,13 @@ from motion.motion_detector import MotionDetector
 from ai.person_detector import PersonDetector
 from utils.snapshot import save_snapshot
 from web.stream import start_stream, set_shared_cameras
+from logs.db import init_db, log_presence_start, log_presence_end
 from config import *
 
 def main():
+    # Initialize database
+    init_db()
+
     # Camera Setting
     cameras = {}
     for cam_id, cfg in CAMERAS.items():
@@ -34,6 +38,8 @@ def main():
             ),
             "presence_active": False,
             "last_presence_time": 0,
+            "event_id": None,
+            "last_snapshot_path": None,
             "ai_counter": 0,
             "snapshot_taken": False,
             "snapshot_delay": 0
@@ -67,18 +73,23 @@ def main():
                             if not data["presence_active"]:
                                 data["presence_active"] = True
                                 data["camera"].presence_active = True
+
+                                data["event_id"] = log_presence_start(data["name"])
                                 data["snapshot_taken"] = False
                                 data["snapshot_delay"] = 2
+                                data["last_snapshot_path"] = None
+
                                 print(f"{data['name']} - New Presence")
                             
                             elif not data["snapshot_taken"]:
                                 data["snapshot_delay"] -= 1
 
                                 if data["snapshot_delay"] <= 0:
-                                    save_snapshot(
+                                    path = save_snapshot(
                                         frame,
                                         prefix=f"presence_cam{cam_id}"
                                     )
+                                    data["last_snapshot_path"] = path
                                     data["snapshot_taken"] = True
                 else:
                     data["ai_counter"] = 0
@@ -89,7 +100,17 @@ def main():
                 ):
                     data["presence_active"] = False
                     data["camera"].presence_active = False
-                    data["snapshot_taken"] = False
+                    data["ai_counter"] = 0
+
+                    if data["event_id"] is not None:
+                        log_presence_end(
+                            data["event_id"],
+                            data["last_snapshot_path"]
+                        )
+                    
+                    data["event_id"] = None
+                    data["last_snapshot_path"] = None
+
                     print(f"{data['name']} - Presence Finish")
             
             time.sleep(0.05)
