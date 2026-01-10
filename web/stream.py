@@ -26,7 +26,7 @@ def generate_frames(cam_id):
 
         overlay = draw_overlay(
             frame.copy(),
-            datap["presence_active"]
+            data["presence_active"]
         )
 
         ret, buffer = cv2.imencode(
