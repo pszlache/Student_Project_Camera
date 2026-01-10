@@ -1,4 +1,5 @@
 from flask import Flask, Response, stream_with_context
+from utils.overlay import draw_overlay
 import cv2
 import threading
 import time
@@ -6,22 +7,28 @@ import time
 app = Flask(__name__)
 
 shared_cameras = {}
-
 def set_shared_cameras(cameras):
     global shared_cameras
     shared_cameras = cameras
 
 def generate_frames(cam_id):
     while True:
-        cam = shared_cameras.get(cam_id)
-        if cam is None:
+        data = shared_cameras.get(cam_id)
+        if data is None:
             time.sleep(0.1)
             continue
 
-        frame = cam.read()
+        frame = data["camera"].read()
         if frame is None:
             time.sleep(0.01)
             continue
+
+        frame = draw_overlay(
+            frame,
+            data["name"],
+            data["presence_active"],
+            data.get("last_bbox")
+        )
 
         ret, buffer = cv2.imencode(
             '.jpg',

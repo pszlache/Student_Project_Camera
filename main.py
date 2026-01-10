@@ -38,6 +38,7 @@ def main():
                 AI_CONFIDENCE
             ),
             "presence_active": False,
+            "last_bbox": None,
             "last_presence_time": 0,
             "ai_counter": 0,
             "snapshot_taken": False,
@@ -117,7 +118,6 @@ def main():
                     data["name"],
                     data["presence_active"]
                 )
-                data["camera"].set_frame(overlay_frame)
             
             time.sleep(0.05)
 
