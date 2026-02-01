@@ -15,6 +15,7 @@ class USBCamera:
         self.frame = None
         self.running = False
         self.lock = threading.Lock()
+        self.presence_active = False
 
     def start(self):
         if self.running:
@@ -37,10 +38,6 @@ class USBCamera:
     def read(self):
         with self.lock:
             return None if self.frame is None else self.frame.copy()
-        
-    def set_frame(self, frame):
-        with self.lock:
-            self.frame = frame
         
     def stop(self):
         self.running = False

@@ -1,10 +1,12 @@
 from flask import Flask, Response, stream_with_context
 from utils.overlay import draw_overlay
+from web.logs import logs_bp
 import cv2
 import threading
 import time
 
 app = Flask(__name__)
+app.register_blueprint(logs_bp)
 
 shared_cameras = {}
 
@@ -26,9 +28,7 @@ def generate_frames(cam_id):
 
         overlay = draw_overlay(
             frame.copy(),
-            data["name"],
-            data["presence_active"],
-            data.get("last_bbox")
+            data["presence_active"]
         )
 
         ret, buffer = cv2.imencode(
@@ -46,8 +46,6 @@ def generate_frames(cam_id):
             buffer.tobytes() +
             b'\r\n'
         )
-
-        time.sleep(0.02)
 
 @app.route('/')
 def index():
