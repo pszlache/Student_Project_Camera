@@ -4,10 +4,7 @@ from typing import Callable, Dict, List, Type
 import threading
 import time
 
-
-# =====================================================
 # EVENT TYPES
-# =====================================================
 
 class EventType(Enum):
     PRESENCE_START = auto()
@@ -16,10 +13,7 @@ class EventType(Enum):
     SNAPSHOT_SAVED = auto()
     SYSTEM_ERROR = auto()
 
-
-# =====================================================
 # BASE EVENT
-# =====================================================
 
 @dataclass
 class Event:
@@ -27,10 +21,7 @@ class Event:
     source: str
     timestamp: float = field(default_factory=time.time)
 
-
-# =====================================================
 # SPECIFIC EVENTS
-# =====================================================
 
 @dataclass
 class PresenceStartEvent(Event):
@@ -80,9 +71,7 @@ class SnapshotSavedEvent(Event):
         self.snapshot_path = snapshot_path
 
 
-# =====================================================
 # EVENT BUS
-# =====================================================
 
 class EventBus:
 
