@@ -16,14 +16,8 @@ from core.events import (
     PresenceEndEvent,
     SnapshotSavedEvent
 )
-
-# HANDLERS
-from core.handlers.db_handler import (
-    handle_presence_start,
-    handle_presence_end
-)
-
-from core.handlers.video_handler import VideoRecorderHandler  # NEW
+from core.handlers.db_handler import DBHandler
+from core.handlers.video_handler import VideoRecorderHandler
 
 
 def main():
@@ -33,8 +27,11 @@ def main():
     event_bus = EventBus()
 
     # Register DB handlers
-    event_bus.register(EventType.PRESENCE_START, handle_presence_start)
-    event_bus.register(EventType.PRESENCE_END, handle_presence_end)
+    db_handler = DBHandler()
+
+    event_bus.register(EventType.PRESENCE_START, db_handler.handle_presence_start)
+    event_bus.register(EventType.PRESENCE_END, db_handler.handle_presence_end)
+    event_bus.register(EventType.SNAPSHOT_SAVED, db_handler.handle_snapshot_saved)
 
     # Video recorder handler
     video_handler = VideoRecorderHandler()

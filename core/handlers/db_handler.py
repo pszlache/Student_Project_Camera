@@ -3,7 +3,7 @@ from core.events import (
     EventType, 
     PresenceStartEvent,
     PresenceEndEvent,
-    SnapshotSavetEvent,
+    SnapshotSavedEvent,
 )
 
 class DBHandler:
@@ -25,7 +25,7 @@ class DBHandler:
 
             del self._active_events[event.cam_id]
     
-    def handle_snapshot_saved(self, event: SnapshotSavetEvent):
+    def handle_snapshot_saved(self, event: SnapshotSavedEvent):
         # snapshot was saved, this is for update path
         event_id = self._active_events.get(event.cam_id)
 
