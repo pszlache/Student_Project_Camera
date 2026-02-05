@@ -3,7 +3,6 @@ from dataclasses import dataclass, field
 import threading
 import time
 
-
 # EVENT TYPES
 class EventType(Enum):
     PRESENCE_START = auto()
@@ -20,7 +19,7 @@ class Event:
     timestamp: float = field(default_factory=time.time)
 
 # SPECIFIC EVENTS
-@dataclass
+@dataclass(init=False)
 class PresenceUpdateEvent(Event):
     cam_id: int
     frame: any = None
@@ -33,7 +32,8 @@ class PresenceUpdateEvent(Event):
         self.cam_id = cam_id
         self.frame = frame
 
-@dataclass
+
+@dataclass(init=False)
 class PresenceEndEvent(Event):
     cam_id: int
     camera_name: str
@@ -48,7 +48,8 @@ class PresenceEndEvent(Event):
         self.camera_name = camera_name
         self.snapshot_path = snapshot_path
 
-@dataclass
+
+@dataclass(init=False)
 class SnapshotSavedEvent(Event):
     cam_id: int
     camera_name: str
@@ -63,7 +64,6 @@ class SnapshotSavedEvent(Event):
         self.camera_name = camera_name
         self.snapshot_path = snapshot_path
 
-# EVENT BUS (OBJECT-BASED HANDLERS)
 class EventBus:
 
     def __init__(self):
@@ -71,17 +71,11 @@ class EventBus:
         self._lock = threading.Lock()
 
     def register(self, handler):
-        """
-        Register handler object.
-        Handler must implement: handle(event)
-        """
         with self._lock:
             self._handlers.append(handler)
 
     def emit(self, event: Event):
-        """
-        Emit event to all registered handlers.
-        """
+
         print(
             f"[EVENT] {event.type.name} | "
             f"Source: {event.source} | "
