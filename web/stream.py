@@ -10,12 +10,15 @@ app.register_blueprint(logs_bp)
 
 shared_cameras = {}
 
+
 def set_shared_cameras(cameras):
     global shared_cameras
     shared_cameras = cameras
 
+
 def generate_frames(cam_id):
     while True:
+
         data = shared_cameras.get(cam_id)
         if data is None:
             time.sleep(0.1)
@@ -26,26 +29,30 @@ def generate_frames(cam_id):
             time.sleep(0.01)
             continue
 
+        presence_active = data["presence_service"].presence_active
+
         overlay = draw_overlay(
             frame.copy(),
-            data["presence_active"]
+            presence_active
         )
 
         ret, buffer = cv2.imencode(
             '.jpg',
             overlay,
             [int(cv2.IMWRITE_JPEG_QUALITY), 70]
-            )
-        
+        )
+
         if not ret:
             continue
 
-        yield(
+        yield (
             b'--frame\r\n'
             b'Content-Type: image/jpeg\r\n\r\n' +
             buffer.tobytes() +
             b'\r\n'
         )
+        time.sleep(0.03)  # ~30 FPS
+
 
 @app.route('/')
 def index():
@@ -55,26 +62,29 @@ def index():
             <h1>Monitoring</h1>
             <div style="display:flex;">
                 <div>
-                    <h3>FirstCam</h3>
+                    <h3>Camera 0</h3>
                     <img src='/video/0'>
                 </div>
                 <div>
-                    <h3>SecondCam</h3>
+                    <h3>Camera 1</h3>
                     <img src='/video/1'>
                 </div>
             </div>
         </body>
     </html>
     '''
+
+
 @app.route('/video/<int:cam_id>')
 def video(cam_id):
     if cam_id not in shared_cameras:
         return "Camera not found", 404
-    
+
     return Response(
         stream_with_context(generate_frames(cam_id)),
         mimetype='multipart/x-mixed-replace; boundary=frame'
     )
+
 
 def start_stream():
     threading.Thread(

@@ -1,35 +1,36 @@
 from logs.db import log_presence_start, log_presence_end
-from core.events import (
-    EventType, 
-    PresenceStartEvent,
-    PresenceEndEvent,
-    SnapshotSavedEvent,
-)
+from core.events import EventType
+
 
 class DBHandler:
+
     def __init__(self):
         self._active_events = {}
 
-    def handle_presence_start(self, event: PresenceStartEvent):
+    def handle(self, event):
+
+        if event.type == EventType.PRESENCE_START:
+            self._handle_start(event)
+
+        elif event.type == EventType.PRESENCE_END:
+            self._handle_end(event)
+
+    def _handle_start(self, event):
+
         event_id = log_presence_start(event.camera_name)
         self._active_events[event.cam_id] = event_id
 
         print(f"[DB] START logged for {event.camera_name} (id={event_id})")
 
-    def handle_presence_end(self, event: PresenceEndEvent):
+    def _handle_end(self, event):
+
         event_id = self._active_events.get(event.cam_id)
 
-        if event_id is not None:
-            log_presence_end(event_id, event.snapshot_path)
-            print(f"[DB] END logged for {event.camera_name} (id={event_id})")
+        if event_id is None:
+            return
 
-            del self._active_events[event.cam_id]
-    
-    def handle_snapshot_saved(self, event: SnapshotSavedEvent):
-        # snapshot was saved, this is for update path
-        event_id = self._active_events.get(event.cam_id)
+        log_presence_end(event_id, event.snapshot_path)
 
-        if event_id:
-            # update snapshots in database
-            log_presence_end(event_id, event.snapshot_path)
-            print(f"[DB] Snapshot linked to event {event_id}")
+        print(f"[DB] END logged for {event.camera_name} (id={event_id})")
+
+        del self._active_events[event.cam_id]

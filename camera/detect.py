@@ -1,16 +1,24 @@
-# Auto USBCamera detect (ENGINEERING VERSION)
-
 import subprocess
 import re
 import cv2
 
 
 def detect_cameras():
-    result = subprocess.run(
-        ["v4l2-ctl", "--list-devices"],
-        capture_output=True,
-        text=True
-    )
+
+    try:
+        result = subprocess.run(
+            ["v4l2-ctl", "--list-devices"],
+            capture_output=True,
+            text=True,
+            timeout=3
+        )
+    except Exception as e:
+        print(f"[CAM DETECT] v4l2-ctl error: {e}")
+        return {}
+
+    if result.returncode != 0:
+        print("[CAM DETECT] v4l2-ctl failed")
+        return {}
 
     cameras = {}
     cam_id = 0
@@ -18,13 +26,14 @@ def detect_cameras():
 
     for block in blocks:
 
-        if "usb-" not in block.lower():
+        lines = block.strip().splitlines()
+        if not lines:
             continue
 
-        lines = block.strip().splitlines()
         name = lines[0].rstrip(":")
 
         for line in lines[1:]:
+
             match = re.search(r"/dev/video(\d+)", line)
             if not match:
                 continue

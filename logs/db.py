@@ -1,54 +1,87 @@
 import sqlite3
+import os
 from datetime import datetime
 
 DB_PATH = "logs/events.db"
 
+def _get_connection():
+    return sqlite3.connect(DB_PATH, timeout=5)
+
+
 def init_db():
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
 
-    c.execute("""
-        CREATE TABLE IF NOT EXISTS presence_events (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            camera_name TEXT,
-            start_time TEXT,
-            end_time TEXT,
-            snapshot_path TEXT
-        )
-    """)
+    # MAKE DIR FOR DB IF NEEDED
+    db_dir = os.path.dirname(DB_PATH)
+    if db_dir:
+        os.makedirs(db_dir, exist_ok=True)
 
-    conn.commit()
-    conn.close()
+    conn = _get_connection()
+    try:
+        cursor = conn.cursor()
+
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS presence_events (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                camera_name TEXT NOT NULL,
+                start_time TEXT NOT NULL,
+                end_time TEXT,
+                snapshot_path TEXT
+            )
+        """)
+
+        conn.commit()
+
+    finally:
+        conn.close()
+
 
 def log_presence_start(camera_name):
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
 
-    start_time = datetime.now().isoformat()
+    conn = _get_connection()
+    try:
+        cursor = conn.cursor()
 
-    c.execute("""
-        INSERT INTO presence_events (camera_name, start_time)
-        VALUES (?, ?)
-    """, (camera_name, start_time))
+        start_time = datetime.now().isoformat()
 
-    event_id = c.lastrowid
+        cursor.execute("""
+            INSERT INTO presence_events (camera_name, start_time)
+            VALUES (?, ?)
+        """, (camera_name, start_time))
 
-    conn.commit()
-    conn.close()
+        event_id = cursor.lastrowid
 
-    return event_id
+        conn.commit()
+        return event_id
+
+    except sqlite3.Error as e:
+        print(f"[DB] START error: {e}")
+        return None
+
+    finally:
+        conn.close()
+
 
 def log_presence_end(event_id, snapshot_path=None):
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
 
-    end_time = datetime.now().isoformat()
+    if event_id is None:
+        return
 
-    c.execute("""
-        UPDATE presence_events
-        SET end_time = ?, snapshot_path = ?
-        WHERE id = ?    
-    """, (end_time, snapshot_path, event_id))
+    conn = _get_connection()
+    try:
+        cursor = conn.cursor()
 
-    conn.commit()
-    conn.close()
+        end_time = datetime.now().isoformat()
+
+        cursor.execute("""
+            UPDATE presence_events
+            SET end_time = ?, snapshot_path = ?
+            WHERE id = ?
+        """, (end_time, snapshot_path, event_id))
+
+        conn.commit()
+
+    except sqlite3.Error as e:
+        print(f"[DB] END error: {e}")
+
+    finally:
+        conn.close()
