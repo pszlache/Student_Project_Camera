@@ -1,4 +1,6 @@
 import time
+import signal
+import sys
 
 from camera.usb_camera import USBCamera
 from camera.detect import detect_cameras
@@ -21,12 +23,14 @@ from config import *
 
 def main():
 
-    # INIT
+    print("=== SYSTEM STARTING ===")
+
+    # INIT DB
     init_db()
 
     event_bus = EventBus()
 
-    # Handlers
+    # HANDLERS
     db_handler = DBHandler()
     video_handler = VideoRecorderHandler(fps=FPS)
     snapshot_handler = SnapshotHandler(event_bus)
@@ -45,6 +49,8 @@ def main():
     cameras = {}
 
     for cam_id, cfg in detected.items():
+
+        print(f"[MAIN] Initializing camera {cfg['index']}")
 
         cam = USBCamera(
             cfg["index"],
@@ -81,9 +87,22 @@ def main():
     set_shared_cameras(cameras)
     start_stream()
 
+    print("=== SYSTEM RUNNING ===")
+
+    running = True
+
+    # SIGNAL HANDLER
+    def shutdown_handler(signum, frame):
+        nonlocal running
+        print("\n=== SHUTDOWN SIGNAL RECEIVED ===")
+        running = False
+
+    signal.signal(signal.SIGINT, shutdown_handler)
+    signal.signal(signal.SIGTERM, shutdown_handler)
+
     # MAIN LOOP
     try:
-        while True:
+        while running:
 
             for cam_id, data in cameras.items():
 
@@ -94,9 +113,15 @@ def main():
                 data["presence_service"].update(frame)
 
             time.sleep(0.01)
+
     finally:
+        print("=== STOPPING CAMERAS ===")
+
         for data in cameras.values():
             data["camera"].stop()
+
+        print("=== SYSTEM SHUTDOWN COMPLETE ===")
+        sys.exit(0)
 
 
 if __name__ == "__main__":

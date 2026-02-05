@@ -1,62 +1,33 @@
-import subprocess
-import re
 import cv2
+import time
 
-
-def detect_cameras():
-
-    try:
-        result = subprocess.run(
-            ["v4l2-ctl", "--list-devices"],
-            capture_output=True,
-            text=True,
-            timeout=3
-        )
-    except Exception as e:
-        print(f"[CAM DETECT] v4l2-ctl error: {e}")
-        return {}
-
-    if result.returncode != 0:
-        print("[CAM DETECT] v4l2-ctl failed")
-        return {}
+def detect_cameras(max_index=10):
 
     cameras = {}
     cam_id = 0
-    blocks = result.stdout.split("\n\n")
 
-    for block in blocks:
+    for index in range(max_index):
 
-        lines = block.strip().splitlines()
-        if not lines:
+        cap = cv2.VideoCapture(index, cv2.CAP_V4L2)
+
+        if not cap.isOpened():
+            cap.release()
             continue
 
-        name = lines[0].rstrip(":")
+        time.sleep(0.2)
 
-        for line in lines[1:]:
+        ret, frame = cap.read()
+        cap.release()
 
-            match = re.search(r"/dev/video(\d+)", line)
-            if not match:
-                continue
+        if not ret or frame is None:
+            continue
 
-            index = int(match.group(1))
+        cameras[cam_id] = {
+            "name": f"Camera{index}",
+            "index": index
+        }
 
-            cap = cv2.VideoCapture(index, cv2.CAP_V4L2)
-            if not cap.isOpened():
-                cap.release()
-                continue
-
-            ret, frame = cap.read()
-            cap.release()
-
-            if not ret or frame is None:
-                continue
-
-            cameras[cam_id] = {
-                "name": name,
-                "index": index
-            }
-
-            cam_id += 1
-            break
+        print(f"[CAM DETECT] Found camera at index {index}")
+        cam_id += 1
 
     return cameras

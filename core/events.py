@@ -3,6 +3,7 @@ from dataclasses import dataclass, field
 import threading
 import time
 
+
 # EVENT TYPES
 class EventType(Enum):
     PRESENCE_START = auto()
@@ -19,6 +20,22 @@ class Event:
     timestamp: float = field(default_factory=time.time)
 
 # SPECIFIC EVENTS
+@dataclass(init=False)
+class PresenceStartEvent(Event):
+    cam_id: int
+    camera_name: str
+    frame: any = None
+
+    def __init__(self, cam_id: int, camera_name: str, frame=None):
+        super().__init__(
+            type=EventType.PRESENCE_START,
+            source=f"camera_{cam_id}"
+        )
+        self.cam_id = cam_id
+        self.camera_name = camera_name
+        self.frame = frame
+
+
 @dataclass(init=False)
 class PresenceUpdateEvent(Event):
     cam_id: int
@@ -64,6 +81,7 @@ class SnapshotSavedEvent(Event):
         self.camera_name = camera_name
         self.snapshot_path = snapshot_path
 
+# EVENT BUS
 class EventBus:
 
     def __init__(self):

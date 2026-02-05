@@ -28,29 +28,36 @@ class PresenceService:
         self.ai_frame_skip = ai_frame_skip
         self.presence_timeout = presence_timeout
 
+        # Presence state tracking
         self.presence_active = False
         self.last_presence_time = 0
         self.ai_counter = 0
+
+        # Limit how often PRESENCE_UPDATE events are emitted
+        self.last_update_emit = 0
+        self.update_interval = 0.5  # seconds between update events
+
 
     def update(self, frame):
 
         now = time.time()
 
-        # MOTION CHECK
+        # MOTION DETECTION
         if self.motion_detector.detect(frame):
 
             self.ai_counter += 1
 
-            # AI CHECK
+            # AI CHECK (every N frames)
             if self.ai_counter % self.ai_frame_skip == 0:
 
                 detected = self.person_detector.detect(frame)
 
                 if detected:
 
+                    # Update last detected timestamp
                     self.last_presence_time = now
 
-                    # START EVENT
+                    # PRESENCE START
                     if not self.presence_active:
                         self.presence_active = True
 
@@ -62,19 +69,23 @@ class PresenceService:
                             )
                         )
 
-                    # UPDATE EVENT
+                    # PRESENCE UPDATE (rate limited)
                     else:
-                        self.event_bus.emit(
-                            PresenceUpdateEvent(
-                                self.cam_id,
-                                frame
+                        if now - self.last_update_emit >= self.update_interval:
+                            self.last_update_emit = now
+
+                            self.event_bus.emit(
+                                PresenceUpdateEvent(
+                                    self.cam_id,
+                                    frame
+                                )
                             )
-                        )
 
         else:
+            # Reset AI counter if no motion is detected
             self.ai_counter = 0
 
-        # TIMEOUT CHECK
+        # PRESENCE TIMEOUT CHECK
         if (
             self.presence_active and
             now - self.last_presence_time > self.presence_timeout

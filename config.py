@@ -4,7 +4,7 @@ FRAME_HEIGHT = 480
 FPS = 15
 
 # Motion Detection
-MOTION_THRESHOLD = 5000
+MOTION_THRESHOLD = 2000
 BLUR_SIZE = (21, 21)
 MIN_DELTA = 25
 
@@ -13,8 +13,8 @@ SNAPSHOT_DIR = "snapshots"
 
 # AI Configuration
 AI_MODEL_DIR = "models"
-AI_CONFIDENCE = 0.6
-AI_FRAME_SKIP = 3
+AI_CONFIDENCE = 0.4
+AI_FRAME_SKIP = 1
 
 # MULTI-CAMERA CONFIG
 CAMERAS = {
@@ -27,3 +27,5 @@ CAMERAS = {
         "index": 1
     }
 }
+
+PRESENCE_TIMEOUT = 3  # seconds
