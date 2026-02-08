@@ -93,3 +93,29 @@ def test_presence_end_emitted_after_timeout():
 
     end_events = [e for e in bus.events if e.type == EventType.PRESENCE_END]
     assert len(end_events) == 1
+
+# Test 4
+def test_update_rate_limit():
+    motion = FakeMotionDetector(True)
+    person = FakePersonDetector(True)
+    bus = FakeEventBus()
+
+    service = PresenceService(
+        cam_id=0,
+        camera_name="TestCam",
+        motion_detector=motion,
+        person_detector=person,
+        event_bus=bus,
+        ai_frame_skip=1,
+        presence_timeout=3
+    )
+
+    service.update(frame=None)  # Processed
+    service.presence_active = True # Simulate active presence
+    
+    for _ in range(5):
+        service.update(frame=None)  # Should be skipped due to rate limit
+
+    update_events = [e for e in bus.events if e.type == EventType.PRESENCE_UPDATE]
+
+    assert len(bus.events) <= 1  # Should only emit for processed frames
