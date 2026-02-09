@@ -38,3 +38,9 @@ SMTP_USERNAME = "your_email@example.com"
 SMTP_PASSWORD = "your_app_password"
 
 MAIL_COOLDOWN = 60
+
+# GSM CONFIG
+GSM_ENABLED = True
+GSM_PORT = "/dev/serial0"
+GSM_BAUDRATE = 115200
+SMS_COOLDOWN = 300 # per camera, in seconds

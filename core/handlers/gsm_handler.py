@@ -1,42 +1,59 @@
+import threading
+import queue
+import time
+
 from core.events import EventType
 
 
 class GSMHandler:
 
-    def __init__(self, enabled=True):
-        self.enabled = enabled
+    def __init__(self, gsm_client, sms_service, cooldown=60):
+        self.gsm_client = gsm_client
+        self.sms_service = sms_service
+        self.cooldown = cooldown
+
+        self.queue = queue.Queue()
+        self.last_sent = {}
+
+        self.worker = threading.Thread(target=self._worker_loop, daemon=True)
+        self.worker.start()
 
     def handle(self, event):
 
-        if not self.enabled:
+        if event.type != EventType.PRESENCE_START:
             return
 
-        if event.type == EventType.PRESENCE_START:
-            self._handle_presence_start(event)
+        numbers = self.sms_service.get_numbers_for_camera(event.cam_id)
+        if not numbers:
+            return
 
-        elif event.type == EventType.PRESENCE_END:
-            self._handle_presence_end(event)
+        now = time.time()
+        last = self.last_sent.get(event.cam_id, 0)
 
-    def _handle_presence_start(self, event):
+        if now - last < self.cooldown:
+            return
 
-        print(
-            f"[GSM] SMS SEND -> Presence detected on "
-            f"{event.camera_name} (cam_id={event.cam_id})"
-        )
+        self.last_sent[event.cam_id] = now
 
-        # Docelowo:
-        # self._send_sms(message)
+        self.queue.put({
+            "numbers": numbers,
+            "camera_name": event.camera_name,
+            "cam_id": event.cam_id
+        })
 
-    def _handle_presence_end(self, event):
+    def _worker_loop(self):
+        while True:
+            task = self.queue.get()
+            try:
+                self._send_sms(task)
+            except Exception as e:
+                print(f"[GSM] Error sending SMS: {e}")
+            finally:
+                self.queue.task_done()
 
-        print(
-            f"[GSM] Presence ended on "
-            f"{event.camera_name} (cam_id={event.cam_id})"
-        )
+    def _send_sms(self, task):
+        message = f"ALERT: Intrusion on {task['camera_name']}"
 
-    def _send_sms(self, message):
-        """
-        Future production implementation
-        using SIM7070G via UART.
-        """
-        print("[GSM] Sending SMS:", message)
+        for number in task["numbers"]:
+            response = self.gsm_client.send_sms(number, message)
+            print(f"[GSM] SMS sent to {number}: {response}")

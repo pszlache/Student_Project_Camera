@@ -12,6 +12,10 @@ from core.repositories.user_repository import UserRepository
 from core.services.notification_service import NotificationService
 from core.handlers.mail_handler import MailHandler
 
+from core.gsm.gsm_client import GSMClient
+from core.services.sms_service import SMSService
+from core.handlers.gsm_handler import GSMHandler
+
 from web.stream import start_stream, set_shared_cameras
 
 from core.events import EventBus
@@ -66,6 +70,19 @@ def main():
         SMTP_USE_SSL
     )
     event_bus.register(mail_handler)
+
+    if GSM_ENABLED:
+        gsm_client = GSMClient(GSM_PORT, GSM_BAUDRATE)
+        # gsm_client.connect()
+
+        sms_service = SMSService("+48123456789") # test number
+        gsm_handler = GSMHandler(
+            gsm_client, 
+            sms_service, 
+            GSM_COOLDOWN
+        )
+
+        event_bus.register(gsm_handler)
 
     for cam_id, cfg in detected.items():
 
