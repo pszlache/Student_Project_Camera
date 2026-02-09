@@ -8,6 +8,10 @@ from camera.detect import detect_cameras
 from motion.motion_detector import MotionDetector
 from ai.person_detector import PersonDetector
 
+from core.repositories.user_repository import UserRepository
+from core.services.notification_service import NotificationService
+from core.handlers.mail_handler import MailHandler
+
 from web.stream import start_stream, set_shared_cameras
 
 from core.events import EventBus
@@ -47,6 +51,21 @@ def main():
         return
 
     cameras = {}
+
+    # MAILER
+    user_repo = UserRepository()
+    notification_service = NotificationService(user_repo)
+
+    mail_handler = MailHandler(
+        SMTP_HOST,
+        SMTP_PORT,
+        SMTP_USERNAME,
+        SMTP_PASSWORD,
+        notification_service,
+        MAIL_COOLDOWN,
+        SMTP_USE_SSL
+    )
+    event_bus.register(mail_handler)
 
     for cam_id, cfg in detected.items():
 

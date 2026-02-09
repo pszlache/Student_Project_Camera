@@ -29,3 +29,12 @@ CAMERAS = {
 }
 
 PRESENCE_TIMEOUT = 3  # seconds
+
+# SMTP CONFIGURATION
+SMTP_USE_SSL = False
+SMTP_HOST = "smtp.example.com"
+SMTP_PORT = 587
+SMTP_USERNAME = "your_email@example.com"
+SMTP_PASSWORD = "your_app_password"
+
+MAIL_COOLDOWN = 60
