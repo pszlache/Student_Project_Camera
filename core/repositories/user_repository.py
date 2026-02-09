@@ -1,11 +1,11 @@
 import sqlite3
-from logs.db import DB_PATH
+from logs import db
 
 
 class UserRepository:
 
     def get_notification_emails(self, cam_id):
-        conn = sqlite3.connect(DB_PATH)
+        conn = sqlite3.connect(db.DB_PATH)
         try:
             cursor = conn.cursor()
             cursor.execute("""
@@ -20,7 +20,7 @@ class UserRepository:
 
 
     def add_user(self, email, role='user', camera_id=None):
-        conn = sqlite3.connect(DB_PATH)
+        conn = sqlite3.connect(db.DB_PATH)
         try:
             cursor = conn.cursor()
             cursor.execute("""
@@ -37,7 +37,7 @@ class UserRepository:
 
 
     def delete_user(self, email):
-        conn = sqlite3.connect(DB_PATH)
+        conn = sqlite3.connect(db.DB_PATH)
         try:
             cursor = conn.cursor()
             cursor.execute("""
@@ -49,7 +49,7 @@ class UserRepository:
 
 
     def disable_notifications(self, email):
-        conn = sqlite3.connect(DB_PATH)
+        conn = sqlite3.connect(db.DB_PATH)
         try:
             cursor = conn.cursor()
             cursor.execute("""
@@ -63,7 +63,7 @@ class UserRepository:
 
 
     def enable_notifications(self, email):
-        conn = sqlite3.connect(DB_PATH)
+        conn = sqlite3.connect(db.DB_PATH)
         try:
             cursor = conn.cursor()
             cursor.execute("""

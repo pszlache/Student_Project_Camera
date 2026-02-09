@@ -13,7 +13,7 @@ def test_db_handler_start_and_end(monkeypatch):
     def fake_log_end(event_id, snapshot_path):
         fake_end_called
 
-    monkeypatch.setattr("coroe.handlers.db_handler.log_presence_start", fake_log_start)
+    monkeypatch.setattr("core.handlers.db_handler.log_presence_start", fake_log_start)
     monkeypatch.setattr("core.handlers.db_handler.log_presence_end", fake_log_end)
 
     handler = DBHandler()

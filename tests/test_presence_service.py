@@ -118,4 +118,4 @@ def test_update_rate_limit():
 
     update_events = [e for e in bus.events if e.type == EventType.PRESENCE_UPDATE]
 
-    assert len(bus.events) <= 1  # Should only emit for processed frames
+    assert len(update_events) <= 1  # Should only emit for processed frames
