@@ -25,6 +25,8 @@ from core.handlers.db_handler import DBHandler
 from core.handlers.video_handler import VideoRecorderHandler
 from core.handlers.snapshot_handler import SnapshotHandler
 
+from core.services.auth_service import AuthService
+
 from logs.db import init_db
 from config import *
 
@@ -35,6 +37,9 @@ def main():
 
     # INIT DB
     init_db()
+
+    auth_service = AuthService()
+    auth_service.ensure_default_admin()
 
     event_bus = EventBus()
 
