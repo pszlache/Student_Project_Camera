@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Monitoring System</title>
+</head>
+<body>
+    <div>
+        <h2>Monitoring System</h2>
+        <div>
+            {% if session.get("user_email") %}
+                Logged as: {{ session["user_email"] }}
+                | <a href="{{ url_for('logout') }}">Logout</a>
+            {% endif %}
+        </div>
+        <hr>
+    </div>
+
+    {% block content %}{% endblock %}
+</body>
+</html>

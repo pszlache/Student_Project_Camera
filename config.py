@@ -43,4 +43,4 @@ MAIL_COOLDOWN = 60
 GSM_ENABLED = True
 GSM_PORT = "/dev/serial0"
 GSM_BAUDRATE = 115200
-SMS_COOLDOWN = 300 # per camera, in seconds
+GSM_COOLDOWN = 300 # per camera, in seconds

@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h3>Admin Panel</h3>
+
+<h4>Add User</h4>
+<form method="POST">
+    Email: <input type="text" name="email">
+    Role:
+    <select name="role">
+        <option value="user">User</option>
+        <option value="admin">Admin</option>
+    </select>
+    Camera ID (optional): <input type="text" name="camera_id">
+    <button type="submit">Add</button>
+</form>
+
+<hr>
+
+<h4>Users</h4>
+<table border="1">
+<tr>
+    <th>Email</th>
+    <th>Role</th>
+    <th>Camera</th>
+</tr>
+
+{% for user in users %}
+<tr>
+    <td>{{ user[0] }}</td>
+    <td>{{ user[1] }}</td>
+    <td>{{ user[2] }}</td>
+</tr>
+{% endfor %}
+
+</table>
+
+{% endblock %}

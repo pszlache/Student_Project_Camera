@@ -11,6 +11,7 @@ from functools import wraps
 from utils.overlay import draw_overlay
 from web.logs import logs_bp
 from core.services.auth_service import AuthService
+from core.repositories.user_repository import UserRepository
 
 import cv2
 import threading
@@ -22,6 +23,8 @@ app.secret_key = "super_secret_key_change_this"
 app.register_blueprint(logs_bp)
 
 auth_service = AuthService()
+user_repo = UserRepository()
+
 shared_cameras = {}
 
 # AUTH DECORATORS
@@ -66,10 +69,7 @@ def generate_frames(cam_id):
 
         presence_active = data["presence_service"].presence_active
 
-        overlay = draw_overlay(
-            frame.copy(),
-            presence_active
-        )
+        overlay = draw_overlay(frame.copy(), presence_active)
 
         ret, buffer = cv2.imencode(
             ".jpg",
@@ -127,6 +127,21 @@ def logout():
 @app.route("/")
 @login_required
 def index():
+
+    camera_blocks = ""
+
+    for cam_id in shared_cameras.keys():
+        camera_blocks += f"""
+        <div>
+            <h3>Camera {cam_id}</h3>
+            <img src='/video/{cam_id}'>
+        </div>
+        """
+
+    admin_button = ""
+    if session["user"]["role"] == "admin":
+        admin_button = "<a href='/admin'>Admin Panel</a>"
+
     return f"""
     <html>
         <body>
@@ -135,21 +150,79 @@ def index():
                 <div>
                     Logged as: {session["user"]["email"]}
                     ({session["user"]["role"]})
-                    <a href="/logout">Logout</a>
+                    | {admin_button}
+                    | <a href="/logout">Logout</a>
                 </div>
             </div>
 
             <div style="display:flex; gap:20px;">
-                <div>
-                    <h3>Camera 0</h3>
-                    <img src='/video/0'>
-                </div>
-
-                <div>
-                    <h3>Camera 1</h3>
-                    <img src='/video/1'>
-                </div>
+                {camera_blocks}
             </div>
+        </body>
+    </html>
+    """
+
+# ADMIN PANEL
+@app.route("/admin", methods=["GET", "POST"])
+@login_required
+@role_required("admin")
+def admin_panel():
+
+    if request.method == "POST":
+        email = request.form.get("email")
+        password = request.form.get("password")
+        role = request.form.get("role")
+
+        if email and password:
+            auth_service.create_user(email, password, role)
+
+    users = user_repo.get_all_users()
+
+    user_rows = ""
+    for user in users:
+        user_rows += f"""
+        <tr>
+            <td>{user["email"]}</td>
+            <td>{user["role"]}</td>
+            <td>{user["notifications_enabled"]}</td>
+        </tr>
+        """
+
+    return f"""
+    <html>
+        <body>
+            <h2>Admin Panel</h2>
+            <a href="/">Back</a>
+            <hr>
+
+            <h3>Add User</h3>
+            <form method="post">
+                Email:<br>
+                <input name="email"><br><br>
+
+                Password:<br>
+                <input name="password" type="password"><br><br>
+
+                Role:<br>
+                <select name="role">
+                    <option value="user">User</option>
+                    <option value="admin">Admin</option>
+                </select><br><br>
+
+                <button type="submit">Create User</button>
+            </form>
+
+            <hr>
+
+            <h3>Users</h3>
+            <table border="1">
+                <tr>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Notifications</th>
+                </tr>
+                {user_rows}
+            </table>
         </body>
     </html>
     """
