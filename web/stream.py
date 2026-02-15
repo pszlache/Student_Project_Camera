@@ -128,9 +128,20 @@ def logout():
 @login_required
 def index():
 
+    user = session["user"]
+
+    if user["role"] == "admin":
+        visible_cameras = shared_cameras.keys()
+    else:
+        allowed = user_repo.get_user_cameras(user["id"])
+        visible_cameras = allowed
+
     camera_blocks = ""
 
-    for cam_id in shared_cameras.keys():
+    for cam_id in visible_cameras:
+        if cam_id not in shared_cameras:
+            continue
+
         camera_blocks += f"""
         <div>
             <h3>Camera {cam_id}</h3>
@@ -138,26 +149,11 @@ def index():
         </div>
         """
 
-    admin_button = ""
-    if session["user"]["role"] == "admin":
-        admin_button = "<a href='/admin'>Admin Panel</a>"
-
     return f"""
     <html>
         <body>
-            <div style="display:flex; justify-content:space-between;">
-                <h1>Monitoring Dashboard</h1>
-                <div>
-                    Logged as: {session["user"]["email"]}
-                    ({session["user"]["role"]})
-                    | {admin_button}
-                    | <a href="/logout">Logout</a>
-                </div>
-            </div>
-
-            <div style="display:flex; gap:20px;">
-                {camera_blocks}
-            </div>
+            <h1>Dashboard</h1>
+            {camera_blocks}
         </body>
     </html>
     """

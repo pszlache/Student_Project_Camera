@@ -20,28 +20,27 @@ def init_db():
     try:
         cursor = conn.cursor()
 
-        # Presence events table
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS presence_events (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                camera_name TEXT NOT NULL,
-                start_time TEXT NOT NULL,
-                end_time TEXT,
-                snapshot_path TEXT
-            )
-        """)
-
-        # Users table (for authentication & notifications)
+        # Users table
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 email TEXT NOT NULL UNIQUE,
                 password_hash TEXT NOT NULL,
                 role TEXT NOT NULL DEFAULT 'user',
-                notifications_enabled INTEGER NOT NULL DEFAULT 1,
-                camera_id INTEGER NULL
+                notifications_enabled INTEGER NOT NULL DEFAULT 1
             )
         """)
+
+        # User-Camera permissions (many-to-many)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS user_cameras (
+                user_id INTEGER NOT NULL,
+                camera_id INTEGER NOT NULL,
+                PRIMARY KEY (user_id, camera_id),
+                FOREIGN KEY (user_id) REFERENCES users(id)
+            )
+        """)
+
 
 
         conn.commit()
