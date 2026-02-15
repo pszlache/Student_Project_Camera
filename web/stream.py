@@ -96,7 +96,11 @@ def login():
         email = request.form.get("email")
         password = request.form.get("password")
 
-        user = auth_service.authenticate(email, password)
+        user = auth_service.authenticate(
+            email,
+            password,
+            request.remote_addr
+        )
 
         if user:
             session["user"] = user
@@ -133,8 +137,7 @@ def index():
     if user["role"] == "admin":
         visible_cameras = shared_cameras.keys()
     else:
-        allowed = user_repo.get_user_cameras(user["id"])
-        visible_cameras = allowed
+        visible_cameras = user_repo.get_user_cameras(user["id"])
 
     camera_blocks = ""
 
@@ -149,11 +152,25 @@ def index():
         </div>
         """
 
+    admin_button = ""
+    if user["role"] == "admin":
+        admin_button = "<a href='/admin'>Admin Panel</a>"
+
     return f"""
     <html>
         <body>
-            <h1>Dashboard</h1>
-            {camera_blocks}
+            <div style="display:flex; justify-content:space-between;">
+                <h1>Monitoring Dashboard</h1>
+                <div>
+                    Logged as: {user["email"]} ({user["role"]})
+                    | {admin_button}
+                    | <a href="/logout">Logout</a>
+                </div>
+            </div>
+
+            <div style="display:flex; gap:20px;">
+                {camera_blocks}
+            </div>
         </body>
     </html>
     """
@@ -165,22 +182,112 @@ def index():
 def admin_panel():
 
     if request.method == "POST":
-        email = request.form.get("email")
-        password = request.form.get("password")
-        role = request.form.get("role")
 
-        if email and password:
-            auth_service.create_user(email, password, role)
+        action = request.form.get("action")
+
+        # CREATE USER
+        if action == "create_user":
+            email = request.form.get("email")
+            password = request.form.get("password")
+            role = request.form.get("role")
+
+            if email and password:
+                auth_service.create_user(email, password, role)
+
+        # DELETE USER
+        elif action == "delete_user":
+            user_id = int(request.form.get("user_id"))
+
+            # Prevent admin from deleting himself
+            if session["user"]["id"] != user_id:
+                user_repo.delete_user_by_id(user_id)
+
+        # ASSIGN CAMERA
+        elif action == "assign_camera":
+            user_id = int(request.form.get("user_id"))
+            camera_id = int(request.form.get("camera_id"))
+
+            user_repo.assign_camera(user_id, camera_id)
+
+        # REMOVE CAMERA
+        elif action == "remove_camera":
+            user_id = int(request.form.get("user_id"))
+            camera_id = int(request.form.get("camera_id"))
+
+            user_repo.remove_camera(user_id, camera_id)
+
+        # TOGGLE NOTIFICATIONS
+        elif action == "toggle_notifications":
+            user_id = int(request.form.get("user_id"))
+            enabled = int(request.form.get("enabled"))
+
+            if enabled:
+                user_repo.enable_notifications(user_id)
+            else:
+                user_repo.disable_notifications(user_id)
 
     users = user_repo.get_all_users()
 
     user_rows = ""
+
     for user in users:
+
+        assigned_cameras = user_repo.get_user_cameras(user["id"])
+        camera_list = ", ".join(map(str, assigned_cameras)) if assigned_cameras else "None"
+
+        # Build remove buttons for each assigned camera
+        remove_buttons = ""
+        for cam in assigned_cameras:
+            remove_buttons += f"""
+            <form method="post" style="display:inline;">
+                <input type="hidden" name="action" value="remove_camera">
+                <input type="hidden" name="user_id" value="{user["id"]}">
+                <input type="hidden" name="camera_id" value="{cam}">
+                <button type="submit">Remove {cam}</button>
+            </form>
+            """
+
         user_rows += f"""
         <tr>
             <td>{user["email"]}</td>
             <td>{user["role"]}</td>
-            <td>{user["notifications_enabled"]}</td>
+            <td>{'ON' if user["notifications_enabled"] else 'OFF'}</td>
+            <td>{camera_list}</td>
+
+            <td>
+                <form method="post" style="display:inline;">
+                    <input type="hidden" name="action" value="assign_camera">
+                    <input type="hidden" name="user_id" value="{user["id"]}">
+                    <input name="camera_id" placeholder="Camera ID">
+                    <button type="submit">Assign</button>
+                </form>
+            </td>
+
+            <td>
+                {remove_buttons}
+            </td>
+
+            <td>
+                <form method="post" style="display:inline;">
+                    <input type="hidden" name="action" value="toggle_notifications">
+                    <input type="hidden" name="user_id" value="{user["id"]}">
+                    <input type="hidden" name="enabled" value="{0 if user["notifications_enabled"] else 1}">
+                    <button type="submit">
+                        {'Disable' if user["notifications_enabled"] else 'Enable'}
+                    </button>
+                </form>
+            </td>
+
+            <td>
+                <form method="post" style="display:inline;">
+                    <input type="hidden" name="action" value="delete_user">
+                    <input type="hidden" name="user_id" value="{user["id"]}">
+                    <button type="submit"
+                        {'disabled' if session["user"]["id"] == user["id"] else ''}>
+                        Delete
+                    </button>
+                </form>
+            </td>
         </tr>
         """
 
@@ -191,8 +298,10 @@ def admin_panel():
             <a href="/">Back</a>
             <hr>
 
-            <h3>Add User</h3>
+            <h3>Create User</h3>
             <form method="post">
+                <input type="hidden" name="action" value="create_user">
+
                 Email:<br>
                 <input name="email"><br><br>
 
@@ -216,6 +325,11 @@ def admin_panel():
                     <th>Email</th>
                     <th>Role</th>
                     <th>Notifications</th>
+                    <th>Assigned Cameras</th>
+                    <th>Assign Camera</th>
+                    <th>Remove Camera</th>
+                    <th>Toggle Notifications</th>
+                    <th>Delete</th>
                 </tr>
                 {user_rows}
             </table>
@@ -227,13 +341,21 @@ def admin_panel():
 @app.route("/video/<int:cam_id>")
 @login_required
 def video(cam_id):
+
     if cam_id not in shared_cameras:
         return "Camera not found", 404
+
+    user_id = session["user"]["id"]
+
+    # Permission check
+    if not user_repo.user_has_access_to_camera(user_id, cam_id):
+        return "Forbidden", 403
 
     return Response(
         stream_with_context(generate_frames(cam_id)),
         mimetype="multipart/x-mixed-replace; boundary=frame"
     )
+
 
 # START SERVER
 def start_stream():

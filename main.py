@@ -40,7 +40,6 @@ def main():
 
     auth_service = AuthService()
     auth_service.ensure_default_admin()
-
     event_bus = EventBus()
 
     # HANDLERS

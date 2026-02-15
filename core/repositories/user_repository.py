@@ -4,12 +4,13 @@ from logs import db
 
 class UserRepository:
 
+    # CONNECTION
     def _get_connection(self):
         conn = sqlite3.connect(db.DB_PATH)
         conn.row_factory = sqlite3.Row
         return conn
 
-    # BASIC USER READ
+    # USER READ OPERATIONS
     def get_all_users(self):
         conn = self._get_connection()
         try:
@@ -18,7 +19,13 @@ class UserRepository:
                 SELECT id, email, role, notifications_enabled
                 FROM users
             """)
-            return [dict(row) for row in cursor.fetchall()]
+            users = [dict(row) for row in cursor.fetchall()]
+
+            # attach assigned cameras
+            for user in users:
+                user["cameras"] = self.get_user_cameras(user["id"])
+
+            return users
         finally:
             conn.close()
 
@@ -31,7 +38,14 @@ class UserRepository:
                 FROM users WHERE id = ?
             """, (user_id,))
             row = cursor.fetchone()
-            return dict(row) if row else None
+
+            if not row:
+                return None
+
+            user = dict(row)
+            user["cameras"] = self.get_user_cameras(user_id)
+
+            return user
         finally:
             conn.close()
 
@@ -44,7 +58,34 @@ class UserRepository:
                 FROM users WHERE email = ?
             """, (email,))
             row = cursor.fetchone()
-            return dict(row) if row else None
+
+            if not row:
+                return None
+
+            user = dict(row)
+            user["cameras"] = self.get_user_cameras(user["id"])
+
+            return user
+        finally:
+            conn.close()
+
+    # USER MANAGEMENT
+    def delete_user(self, user_id):
+        conn = self._get_connection()
+        try:
+            cursor = conn.cursor()
+
+            # remove camera mappings first (FK safety)
+            cursor.execute("""
+                DELETE FROM user_cameras WHERE user_id = ?
+            """, (user_id,))
+
+            cursor.execute("""
+                DELETE FROM users WHERE id = ?
+            """, (user_id,))
+
+            conn.commit()
+            return cursor.rowcount > 0
         finally:
             conn.close()
 
@@ -53,10 +94,12 @@ class UserRepository:
         conn = self._get_connection()
         try:
             cursor = conn.cursor()
+
             cursor.execute("""
                 INSERT OR IGNORE INTO user_cameras (user_id, camera_id)
                 VALUES (?, ?)
             """, (user_id, camera_id))
+
             conn.commit()
         finally:
             conn.close()
@@ -85,18 +128,35 @@ class UserRepository:
         finally:
             conn.close()
 
+    def user_has_camera_access(self, user_id, camera_id):
+        conn = self._get_connection()
+        try:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT 1 FROM user_cameras
+                WHERE user_id = ? AND camera_id = ?
+            """, (user_id, camera_id))
+            return cursor.fetchone() is not None
+        finally:
+            conn.close()
+
     # NOTIFICATIONS
     def get_notification_emails(self, camera_id):
         conn = self._get_connection()
         try:
             cursor = conn.cursor()
+
             cursor.execute("""
-                SELECT u.email
+                SELECT DISTINCT u.email
                 FROM users u
-                JOIN user_cameras uc ON u.id = uc.user_id
+                LEFT JOIN user_cameras uc ON u.id = uc.user_id
                 WHERE u.notifications_enabled = 1
-                AND uc.camera_id = ?
+                AND (
+                    u.role = 'admin'
+                    OR uc.camera_id = ?
+                )
             """, (camera_id,))
+
             return [row["email"] for row in cursor.fetchall()]
         finally:
             conn.close()
@@ -124,3 +184,32 @@ class UserRepository:
             conn.commit()
         finally:
             conn.close()
+
+    def user_has_access_to_camera(self, user_id, camera_id):
+        conn = self._get_connection()
+        try:
+            cursor = conn.cursor()
+
+            # Admin has access to everything
+            cursor.execute("""
+                SELECT role FROM users WHERE id = ?
+            """, (user_id,))
+            row = cursor.fetchone()
+
+            if not row:
+                return False
+
+            if row["role"] == "admin":
+                return True
+
+            # Check camera assignment
+            cursor.execute("""
+                SELECT 1 FROM user_cameras
+                WHERE user_id = ? AND camera_id = ?
+            """, (user_id, camera_id))
+
+            return cursor.fetchone() is not None
+
+        finally:
+            conn.close()
+
