@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="events-page">
+
+    <!-- HEADER -->
+    <div class="events-header">
+        <h1>Events</h1>
+
+        <div class="events-filters">
+            <form method="get">
+                <input name="camera" placeholder="Camera id"
+                       value="{{ request.args.get('camera','') }}">
+
+                <select name="type">
+                    <option value="">All</option>
+                    <option value="presence_start">Presence start</option>
+                    <option value="presence_end">Presence end</option>
+                    <option value="snapshot">Snapshot</option>
+                    <option value="video">Video</option>
+                </select>
+
+                <button type="submit">Filter</button>
+            </form>
+        </div>
+    </div>
+
+
+    <!-- TIMELINE -->
+    <div class="events-timeline">
+
+        {% if events %}
+            {% for e in events %}
+                <div class="event-card">
+
+                    <div class="event-top">
+                        <span class="event-type">{{ e.type }}</span>
+                        <span class="event-time">{{ e.timestamp }}</span>
+                    </div>
+
+                    <div class="event-meta">
+                        Camera {{ e.camera_id }}
+                    </div>
+
+                    {% if e.snapshot %}
+                        <img class="event-preview" src="{{ e.snapshot }}">
+                    {% endif %}
+
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="muted">No events yet</div>
+        {% endif %}
+
+    </div>
+
+</div>
+
+{% endblock %}

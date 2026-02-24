@@ -1,0 +1,398 @@
+/* ================= GLOBAL ================= */
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: system-ui, sans-serif;
+}
+
+body {
+    background: #0f172a;
+    color: #e5e7eb;
+}
+
+/* ================= APP LAYOUT ================= */
+
+.app {
+    display: flex;
+    height: 100vh;
+}
+
+/* ================= SIDEBAR ================= */
+
+.sidebar {
+    width: 240px;
+    background: #111827;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.sidebar .logo {
+    font-weight: bold;
+    margin-bottom: 20px;
+}
+
+.sidebar a {
+    color: #cbd5f5;
+    text-decoration: none;
+    padding: 10px;
+    border-radius: 8px;
+    display: block;
+}
+
+.sidebar a:hover {
+    background: #1f2937;
+}
+
+.nav-section {
+    margin-top: 20px;
+    font-size: 12px;
+    opacity: 0.6;
+}
+
+/* ================= MAIN ================= */
+
+.main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ================= TOPBAR ================= */
+
+.topbar {
+    height: 60px;
+    background: #111827;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 20px;
+}
+
+.status {
+    display: flex;
+    gap: 10px;
+}
+
+.dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+}
+
+.dot.ok { background: #22c55e; }
+.dot.warn { background: #f59e0b; }
+.dot.err { background: #ef4444; }
+
+/* ================= CONTENT ================= */
+
+.content {
+    padding: 20px;
+    overflow: auto;
+}
+
+/* ================= CAMERA GRID ================= */
+
+.camera-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 20px;
+}
+
+/* ================= CAMERA CARD ================= */
+
+.camera-card {
+    background: #1f2937;
+    border-radius: 12px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.camera-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.camera-preview img {
+    width: 100%;
+    border-radius: 8px;
+}
+
+.camera-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.camera-actions a {
+    background: #111827;
+    padding: 6px 10px;
+    border-radius: 6px;
+    text-decoration: none;
+    color: #e5e7eb;
+}
+
+/* ================= BADGES ================= */
+
+.badge {
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 12px;
+}
+
+.badge.active {
+    background: #22c55e;
+    color: black;
+}
+
+.badge.idle {
+    background: #374151;
+}
+
+/* ================= AUTH (LOGIN) ================= */
+
+.auth-body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+}
+
+.auth-container {
+    background: #1f2937;
+    padding: 30px;
+    border-radius: 12px;
+    width: 320px;
+}
+
+.auth-container input {
+    width: 100%;
+    padding: 8px;
+    margin-top: 4px;
+    margin-bottom: 12px;
+    border-radius: 6px;
+    border: none;
+}
+
+.auth-container button {
+    width: 100%;
+    padding: 10px;
+    border-radius: 8px;
+    border: none;
+    background: #22c55e;
+    font-weight: bold;
+}
+
+/* ================= CAMERA DETAIL ================= */
+
+.camera-detail {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.detail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.back {
+    text-decoration: none;
+    background: #1f2937;
+    padding: 8px 12px;
+    border-radius: 8px;
+}
+
+.detail-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 20px;
+}
+
+.detail-card {
+    background: #1f2937;
+    border-radius: 12px;
+    padding: 15px;
+}
+
+.detail-stream {
+    width: 100%;
+    border-radius: 8px;
+}
+
+.timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.event {
+    background: #111827;
+    padding: 8px;
+    border-radius: 6px;
+}
+
+.media-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+}
+
+.muted {
+    opacity: 0.6;
+}
+
+/* ================= EVENTS ================= */
+
+.events-page {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.events-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.events-filters input,
+.events-filters select {
+    padding: 6px;
+    border-radius: 6px;
+    border: none;
+    margin-right: 6px;
+}
+
+.events-filters button {
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: none;
+    background: #22c55e;
+}
+
+.events-timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.event-card {
+    background: #1f2937;
+    padding: 12px;
+    border-radius: 10px;
+}
+
+.event-top {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 6px;
+}
+
+.event-type {
+    font-weight: bold;
+}
+
+.event-time {
+    opacity: 0.6;
+}
+
+.event-meta {
+    font-size: 13px;
+    margin-bottom: 6px;
+}
+
+.event-preview {
+    width: 200px;
+    border-radius: 6px;
+}
+
+/* ================= SYSTEM ================= */
+
+.system-page {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.system-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 20px;
+}
+
+.system-card {
+    background: #1f2937;
+    border-radius: 12px;
+    padding: 15px;
+}
+
+.status-line {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 6px;
+}
+
+.handler {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 6px;
+}
+
+/* ================= ADMIN ================= */
+
+.admin-page {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.admin-card {
+    background: #1f2937;
+    border-radius: 12px;
+    padding: 15px;
+}
+
+.admin-form {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.admin-form input,
+.admin-form select {
+    padding: 8px;
+    border-radius: 6px;
+    border: none;
+}
+
+.admin-form button {
+    padding: 8px 12px;
+    border-radius: 6px;
+    border: none;
+    background: #22c55e;
+}
+
+.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+.admin-table th,
+.admin-table td {
+    padding: 8px;
+    text-align: left;
+}
+
+.inline {
+    display: flex;
+    gap: 6px;
+}

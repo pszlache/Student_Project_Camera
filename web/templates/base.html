@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ title or "Presence Monitor" }}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+
+<div class="app">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="logo">
+            Presence Monitor
+        </div>
+
+        <nav>
+            <a href="/">Dashboard</a>
+            <a href="/events">Events</a>
+            <a href="/system">System</a>
+
+            {% if session.get("user") and session["user"]["role"] == "admin" %}
+            <div class="nav-section">Admin</div>
+            <a href="/admin">Admin panel</a>
+            {% endif %}
+        </nav>
+    </aside>
+
+    <!-- MAIN -->
+    <div class="main">
+
+        <!-- TOPBAR -->
+        <header class="topbar">
+
+            <div class="status">
+                <span id="dot-ai" class="dot" title="AI"></span>
+                <span id="dot-gsm" class="dot" title="GSM"></span>
+                <span id="dot-cameras" class="dot" title="Cameras"></span>
+            </div>
+
+            <div class="user">
+                {% if session.get("user") %}
+                    {{ session["user"]["email"] }}
+                {% endif %}
+                <a href="/logout" class="logout">Logout</a>
+            </div>
+
+        </header>
+
+        <!-- CONTENT -->
+        <main class="content">
+            {% block content %}{% endblock %}
+        </main>
+
+    </div>
+
+</div>
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+
+</body>
+</html>

@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="system-page">
+
+    <h1>System Status</h1>
+
+    <div class="system-grid">
+
+        <!-- CAMERAS -->
+        <div class="system-card">
+            <h3>Cameras</h3>
+            <div class="status-line">
+                <span class="dot ok"></span>
+                {{ cameras_count or "?" }} active
+            </div>
+        </div>
+
+        <!-- AI -->
+        <div class="system-card">
+            <h3>AI Model</h3>
+            <div class="status-line">
+                <span class="dot ok"></span>
+                Loaded
+            </div>
+        </div>
+
+        <!-- GSM -->
+        <div class="system-card">
+            <h3>GSM</h3>
+            <div class="status-line">
+                <span class="dot warn"></span>
+                Pending
+            </div>
+        </div>
+
+        <!-- DISK -->
+        <div class="system-card">
+            <h3>Disk</h3>
+            <div class="status-line">
+                {{ disk_usage or "?" }}
+            </div>
+        </div>
+
+        <!-- UPTIME -->
+        <div class="system-card">
+            <h3>Uptime</h3>
+            <div class="status-line">
+                {{ uptime or "?" }}
+            </div>
+        </div>
+
+        <!-- HANDLERS -->
+        <div class="system-card">
+            <h3>Handlers</h3>
+
+            <div class="handler">
+                Video recorder
+                <span class="badge active">OK</span>
+            </div>
+
+            <div class="handler">
+                Snapshot
+                <span class="badge active">OK</span>
+            </div>
+
+            <div class="handler">
+                Mail
+                <span class="badge idle">Configured</span>
+            </div>
+
+            <div class="handler">
+                GSM
+                <span class="badge idle">Disabled</span>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

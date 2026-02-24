@@ -40,7 +40,7 @@ class AuthService:
         finally:
             conn.close()
 
-    def authenticate(self, email: str, password: str, ip_address=None):
+    def authenticate(self, email: str, password: str, ip_address: str):
         conn = self._get_connection()
         try:
             cursor = conn.cursor()
@@ -54,24 +54,25 @@ class AuthService:
             row = cursor.fetchone()
 
             if not row:
-                log_login_attempt(email, False, ip_address)
+                log_login_attempt(email, ip_address, False)
                 return None
 
             user_id, password_hash, role = row
 
             if self.verify_password(password, password_hash):
-                log_login_attempt(email, True, ip_address)
+                log_login_attempt(email, ip_address, True)
                 return {
                     "id": user_id,
                     "email": email,
                     "role": role
                 }
 
-            log_login_attempt(email, False, ip_address)
+            log_login_attempt(email, ip_address, False)
             return None
 
         finally:
             conn.close()
+
 
     def ensure_default_admin(self):
         conn = self._get_connection()

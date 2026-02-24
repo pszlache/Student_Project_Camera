@@ -21,7 +21,6 @@ class UserRepository:
             """)
             users = [dict(row) for row in cursor.fetchall()]
 
-            # attach assigned cameras
             for user in users:
                 user["cameras"] = self.get_user_cameras(user["id"])
 
@@ -35,7 +34,8 @@ class UserRepository:
             cursor = conn.cursor()
             cursor.execute("""
                 SELECT id, email, role, notifications_enabled
-                FROM users WHERE id = ?
+                FROM users
+                WHERE id = ?
             """, (user_id,))
             row = cursor.fetchone()
 
@@ -55,7 +55,8 @@ class UserRepository:
             cursor = conn.cursor()
             cursor.execute("""
                 SELECT id, email, role, notifications_enabled
-                FROM users WHERE email = ?
+                FROM users
+                WHERE email = ?
             """, (email,))
             row = cursor.fetchone()
 
@@ -70,36 +71,41 @@ class UserRepository:
             conn.close()
 
     # USER MANAGEMENT
-    def delete_user(self, user_id):
+    def delete_user_by_id(self, user_id):
         conn = self._get_connection()
         try:
             cursor = conn.cursor()
 
-            # remove camera mappings first (FK safety)
+            # Remove camera permissions
             cursor.execute("""
-                DELETE FROM user_cameras WHERE user_id = ?
+                DELETE FROM user_cameras
+                WHERE user_id = ?
             """, (user_id,))
 
+            # Remove user
             cursor.execute("""
-                DELETE FROM users WHERE id = ?
+                DELETE FROM users
+                WHERE id = ?
             """, (user_id,))
 
             conn.commit()
+
             return cursor.rowcount > 0
         finally:
             conn.close()
 
     # CAMERA PERMISSIONS
     def assign_camera(self, user_id, camera_id):
+        if camera_id is None:
+            return
+
         conn = self._get_connection()
         try:
             cursor = conn.cursor()
-
             cursor.execute("""
                 INSERT OR IGNORE INTO user_cameras (user_id, camera_id)
                 VALUES (?, ?)
             """, (user_id, camera_id))
-
             conn.commit()
         finally:
             conn.close()
@@ -121,21 +127,37 @@ class UserRepository:
         try:
             cursor = conn.cursor()
             cursor.execute("""
-                SELECT camera_id FROM user_cameras
+                SELECT camera_id
+                FROM user_cameras
                 WHERE user_id = ?
             """, (user_id,))
             return [row["camera_id"] for row in cursor.fetchall()]
         finally:
             conn.close()
 
-    def user_has_camera_access(self, user_id, camera_id):
+    def user_has_access_to_camera(self, user_id, camera_id):
         conn = self._get_connection()
         try:
             cursor = conn.cursor()
+
+            # Check role
+            cursor.execute("""
+                SELECT role FROM users
+                WHERE id = ?
+            """, (user_id,))
+            row = cursor.fetchone()
+
+            if not row:
+                return False
+
+            if row["role"] == "admin":
+                return True
+
             cursor.execute("""
                 SELECT 1 FROM user_cameras
                 WHERE user_id = ? AND camera_id = ?
             """, (user_id, camera_id))
+
             return cursor.fetchone() is not None
         finally:
             conn.close()
@@ -166,7 +188,8 @@ class UserRepository:
         try:
             cursor = conn.cursor()
             cursor.execute("""
-                UPDATE users SET notifications_enabled = 1
+                UPDATE users
+                SET notifications_enabled = 1
                 WHERE id = ?
             """, (user_id,))
             conn.commit()
@@ -178,38 +201,38 @@ class UserRepository:
         try:
             cursor = conn.cursor()
             cursor.execute("""
-                UPDATE users SET notifications_enabled = 0
+                UPDATE users
+                SET notifications_enabled = 0
                 WHERE id = ?
             """, (user_id,))
             conn.commit()
         finally:
             conn.close()
 
-    def user_has_access_to_camera(self, user_id, camera_id):
+    # LOGIN LOGS
+    def log_login_attempt(self, email, ip_address, success):
         conn = self._get_connection()
         try:
             cursor = conn.cursor()
-
-            # Admin has access to everything
             cursor.execute("""
-                SELECT role FROM users WHERE id = ?
-            """, (user_id,))
-            row = cursor.fetchone()
-
-            if not row:
-                return False
-
-            if row["role"] == "admin":
-                return True
-
-            # Check camera assignment
-            cursor.execute("""
-                SELECT 1 FROM user_cameras
-                WHERE user_id = ? AND camera_id = ?
-            """, (user_id, camera_id))
-
-            return cursor.fetchone() is not None
-
+                INSERT INTO login_logs (email, ip_address, success, timestamp)
+                VALUES (?, ?, ?, datetime('now'))
+            """, (email, ip_address, 1 if success else 0))
+            conn.commit()
         finally:
             conn.close()
 
+    def get_login_logs(self, limit=50):
+        conn = self._get_connection()
+        try:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT email, ip_address, success, timestamp
+                FROM login_logs
+                ORDER BY id DESC
+                LIMIT ?
+            """, (limit,))
+            rows = cursor.fetchall()
+            return [dict(row) for row in rows]
+        finally:
+            conn.close()

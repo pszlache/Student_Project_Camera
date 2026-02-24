@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h1>Dashboard</h1>
+
+<div class="camera-grid">
+
+    {% for cam in cameras %}
+    <div class="camera-card">
+
+        <div class="camera-header">
+            <h3>Camera {{ cam.id }}</h3>
+
+            {% if cam.presence %}
+                <span class="badge active">Presence</span>
+            {% else %}
+                <span class="badge idle">Idle</span>
+            {% endif %}
+        </div>
+
+        <div class="camera-preview">
+            <img src="{{ url_for('video', cam_id=cam.id) }}">
+        </div>
+
+        <div class="camera-actions">
+            <a href="/camera/{{ cam.id }}">Open</a>
+            <a href="/events?camera={{ cam.id }}">Events</a>
+        </div>
+
+    </div>
+    {% endfor %}
+
+</div>
+
+{% endblock %}

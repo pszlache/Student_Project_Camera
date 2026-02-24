@@ -52,6 +52,17 @@ def init_db():
             )
         """)
 
+        # Login logs table
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS login_logs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                email TEXT NOT NULL,
+                ip_address TEXT,
+                success INTEGER NOT NULL,
+                timestamp TEXT NOT NULL
+            )
+        """)
+
         conn.commit()
 
     finally:
@@ -109,18 +120,21 @@ def log_presence_end(event_id, snapshot_path=None):
     finally:
         conn.close()
 
-def log_login_attempt(email, success, ip_address=None):
+def log_login_attempt(email, ip_address, success):
 
     conn = _get_connection()
     try:
         cursor = conn.cursor()
 
-        timestamp = datetime.now().isoformat()
-
         cursor.execute("""
-            INSERT INTO login_logs (email, success, ip_address, timestamp)
+            INSERT INTO login_logs (email, ip_address, success, timestamp)
             VALUES (?, ?, ?, ?)
-        """, (email, int(success), ip_address, timestamp))
+        """, (
+            email,
+            ip_address,
+            1 if success else 0,
+            datetime.now().isoformat()
+        ))
 
         conn.commit()
 
