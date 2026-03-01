@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="camera-detail">
+
+    <div class="detail-header">
+        <h1>Recordings - Camera {{ cam_id }}</h1>
+        <a href="/" class="back">← Back to dashboard</a>
+    </div>
+
+    <div class="media-grid">
+
+        {% for file in recordings %}
+        <div class="detail-card">
+
+            <video width="100%" controls>
+                <source 
+                    src="{{ url_for('serve_recording', cam_id=cam_id, filename=file) }}" 
+                    type="video/mp4">
+            </video>
+
+            <div class="muted">{{ file }}</div>
+
+        </div>
+        {% else %}
+            <p class="muted">No recordings available.</p>
+        {% endfor %}
+
+    </div>
+
+</div>
+
+{% endblock %}

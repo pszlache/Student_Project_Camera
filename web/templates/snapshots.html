@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="camera-detail">
+
+    <div class="detail-header">
+        <h1>Snapshots - Camera {{ cam_id }}</h1>
+        <a href="/" class="back">← Back to dashboard</a>
+    </div>
+
+    <div class="media-grid">
+
+        {% for file in snapshots %}
+        <div class="detail-card">
+
+            <img 
+                src="{{ url_for('serve_snapshot', cam_id=cam_id, filename=file) }}" 
+                width="100%">
+
+            <div class="muted">{{ file }}</div>
+
+        </div>
+        {% else %}
+            <p class="muted">No snapshots available.</p>
+        {% endfor %}
+
+    </div>
+
+</div>
+
+{% endblock %}

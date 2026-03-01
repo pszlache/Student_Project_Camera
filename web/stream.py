@@ -7,7 +7,8 @@ from flask import (
     session,
     url_for,
     render_template,
-    jsonify
+    jsonify,
+    send_from_directory
 )
 from functools import wraps
 from utils.overlay import draw_overlay
@@ -19,6 +20,7 @@ import cv2
 import threading
 import time
 import os
+import glob
 from datetime import timedelta
 
 # ================= FLASK INIT =================
@@ -125,7 +127,7 @@ def api_status():
         "cameras": cameras_online > 0
     })
 
-# ================= AUTH ROUTES =================
+# ================= AUTH =================
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -185,12 +187,104 @@ def index():
 
     return render_template("dashboard.html", cameras=cameras_data)
 
+# ================= CAMERA DETAIL =================
+
+@app.route("/camera/<int:cam_id>")
+@login_required
+def camera_detail(cam_id):
+
+    if cam_id not in shared_cameras:
+        return "Camera not found", 404
+
+    user_id = session["user"]["id"]
+
+    if not user_repo.user_has_access_to_camera(user_id, cam_id):
+        return "Forbidden", 403
+
+    presence = shared_cameras[cam_id]["presence_service"].presence_active
+
+    return render_template(
+        "camera_detail.html",
+        cam_id=cam_id,
+        presence=presence
+    )
+
+# ================= RECORDS =================
+
+@app.route("/records/<int:cam_id>")
+@login_required
+def records_page(cam_id):
+
+    base_path = os.path.join("recordings", f"cam_{cam_id}")
+    pattern = os.path.join(base_path, "*.mp4")
+    files = sorted(glob.glob(pattern), reverse=True)
+
+    recordings = [os.path.basename(f) for f in files]
+
+    return render_template(
+        "records.html",
+        cam_id=cam_id,
+        recordings=recordings
+    )
+
+# ================= SNAPSHOTS =================
+
+@app.route("/snapshots/<int:cam_id>")
+@login_required
+def snapshots_page(cam_id):
+
+    base_path = os.path.join("snapshots", f"cam_{cam_id}")
+    pattern = os.path.join(base_path, "*.jpg")
+    files = sorted(glob.glob(pattern), reverse=True)
+
+    snapshots = [os.path.basename(f) for f in files]
+
+    return render_template(
+        "snapshots.html",
+        cam_id=cam_id,
+        snapshots=snapshots
+    )
+
+# ================= SERVE MEDIA =================
+
+@app.route("/media/recordings/<int:cam_id>/<path:filename>")
+@login_required
+def serve_recording(cam_id, filename):
+
+    directory = os.path.join("recordings", f"cam_{cam_id}")
+    return send_from_directory(directory, filename)
+
+
+@app.route("/media/snapshots/<int:cam_id>/<path:filename>")
+@login_required
+def serve_snapshot(cam_id, filename):
+
+    directory = os.path.join("snapshots", f"cam_{cam_id}")
+    return send_from_directory(directory, filename)
+
 # ================= EVENTS =================
 
 @app.route("/events")
 @login_required
 def events_page():
-    return render_template("events.html", events=[])
+
+    raw_events = user_repo.get_recent_events()
+    events = []
+
+    for e in raw_events:
+        duration = None
+
+        if e.get("end_time"):
+            duration = (e["end_time"] - e["start_time"]).total_seconds()
+
+        events.append({
+            "camera_id": e["camera_id"],
+            "start_time": e["start_time"],
+            "end_time": e.get("end_time"),
+            "duration": duration
+        })
+
+    return render_template("events.html", events=events)
 
 # ================= SYSTEM =================
 
@@ -201,15 +295,58 @@ def system_page():
         "system.html",
         cameras_count=len(shared_cameras),
         disk_usage="—",
-        uptime="—"
+        version="1.0"
     )
 
-# ================= RECORDS =================
+# ================= ADMIN =================
 
-@app.route("/records/<int:cam_id>")
+@app.route("/admin", methods=["GET", "POST"])
 @login_required
-def records_page(cam_id):
-    return f"<h2>Records for camera {cam_id} (module coming soon)</h2>"
+@role_required("admin")
+def admin_panel():
+
+    if request.method == "POST":
+        action = request.form.get("action")
+
+        if action == "create_user":
+            email = request.form.get("email")
+            password = request.form.get("password")
+            role = request.form.get("role")
+            if email and password:
+                auth_service.create_user(email, password, role)
+
+        elif action == "delete_user":
+            user_id = int(request.form.get("user_id"))
+            if session["user"]["id"] != user_id:
+                user_repo.delete_user_by_id(user_id)
+
+        elif action == "assign_camera":
+            user_id = int(request.form.get("user_id"))
+            camera_id_raw = request.form.get("camera_id")
+
+            if camera_id_raw == "":
+                user_repo.remove_all_cameras(user_id)
+            else:
+                user_repo.assign_camera(user_id, int(camera_id_raw))
+
+        elif action == "remove_camera":
+            user_id = int(request.form.get("user_id"))
+            camera_id = int(request.form.get("camera_id"))
+            user_repo.remove_camera(user_id, camera_id)
+
+        elif action == "toggle_notifications":
+            user_id = int(request.form.get("user_id"))
+            enabled = int(request.form.get("enabled"))
+
+            if enabled:
+                user_repo.enable_notifications(user_id)
+            else:
+                user_repo.disable_notifications(user_id)
+
+    users = user_repo.get_all_users()
+    login_logs = user_repo.get_login_logs(50)
+
+    return render_template("admin.html", users=users, login_logs=login_logs)
 
 # ================= VIDEO =================
 

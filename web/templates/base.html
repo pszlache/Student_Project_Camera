@@ -5,13 +5,16 @@
     <title>{{ title or "Presence Monitor" }}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 
 <body>
 
 <div class="app">
 
+    {% if session.get("user") %}
+
+    <!-- SIDEBAR -->
     <aside class="sidebar">
         <div class="logo">Presence Monitor</div>
 
@@ -20,15 +23,19 @@
             <a href="/events">Events</a>
             <a href="/system">System</a>
 
-            {% if session.get("user") and session["user"]["role"] == "admin" %}
-            <div class="nav-section">Admin</div>
-            <a href="/admin">Admin panel</a>
+            {% if session["user"]["role"] == "admin" %}
+                <div class="nav-section">Admin</div>
+                <a href="/admin">Admin panel</a>
             {% endif %}
         </nav>
     </aside>
 
+    {% endif %}
+
     <div class="main">
 
+        {% if session.get("user") %}
+        <!-- TOPBAR -->
         <header class="topbar">
 
             <div class="status">
@@ -54,7 +61,9 @@
             </div>
 
         </header>
+        {% endif %}
 
+        <!-- PAGE CONTENT -->
         <main class="content">
             {% block content %}{% endblock %}
         </main>

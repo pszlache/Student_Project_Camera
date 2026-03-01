@@ -3,13 +3,13 @@
 
 <h1>Dashboard</h1>
 
-<div class="tile-grid">
+<div class="camera-grid">
 
     {% for cam in cameras %}
-    <div class="tile"
+    <div class="camera-card"
          onclick="window.location='/camera/{{ cam.id }}'">
 
-        <div class="tile-header">
+        <div class="camera-header">
             <h3>Camera {{ cam.id }}</h3>
 
             {% if cam.presence %}
@@ -19,16 +19,22 @@
             {% endif %}
         </div>
 
-        <div class="tile-stream">
+        <div class="camera-preview">
             <img src="{{ url_for('video', cam_id=cam.id) }}">
         </div>
 
-        <div class="tile-footer">
+        <div class="camera-actions">
             <a href="/records/{{ cam.id }}"
-               class="secondary-btn"
+               class="secondary"
                onclick="event.stopPropagation();">
                 Records
             </a>
+            <a href="/snapshot/{{ cam.id }}"
+               class="secondary"
+               onclick="event.stopPropagation();">
+                Snapshot
+            </a>
+
         </div>
 
     </div>
