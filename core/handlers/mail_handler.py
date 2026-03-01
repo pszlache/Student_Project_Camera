@@ -10,20 +10,23 @@ from core.events import EventType
 
 class MailHandler:
 
-    def __init__(self, smtp_host, smtp_port, username, password, notification_service, cooldown=60, smtp_use_ssl=False):
-        self.smtp_host = smtp_host
-        self.smtp_port = smtp_port
-        self.smtp_use_ssl = smtp_use_ssl
-        self.username = username
-        self.password = password
-        self.notification_service = notification_service
-        self.cooldown = cooldown
+    def _send_email(self, task):
 
-        self.queue = queue.Queue()
-        self.last_sent = {}  # cam_id -> timestamp
+        subject = f"ALERT: Presence detected on camera {task['camera_name']}"
+        body = (
+            f"Intrusion detected.\n\n"
+            f"Camera: {task['camera_name']}\n"
+            f"Camera ID: {task['cam_id']}\n"
+            f"Timestamp: {task['timestamp']}\n"
+        )
 
-        self.worker = threading.Thread(target=self._worker_loop, daemon=True)
-        self.worker.start()
+        self.email_provider.send(
+            task["recipients"],
+            subject,
+            body
+        )
+
+        print(f"[MAIL] Sent to {len(task['recipients'])} recipient(s)")
 
     def handle(self, event):
         if event.type != EventType.PRESENCE_START:

@@ -5,7 +5,6 @@ import sys
 from camera.usb_camera import USBCamera
 from camera.detect import detect_cameras
 
-from core.handlers import mail_handler
 from motion.motion_detector import MotionDetector
 from ai.person_detector import PersonDetector
 
@@ -31,27 +30,26 @@ from core.services.auth_service import AuthService
 from logs.db import init_db
 from config import *
 
-from core.events import PresenceStartEvent
+# Email provider abstraction
+from core.notifications.providers.smtp_provider import SMTPProvider
+# Alternative production provider:
+# from core.notifications.providers.sendgrid_provider import SendGridProvider
 
-test_event = PresenceStartEvent(
-    cam_id=0,
-    camera_name="TestCam"
-)
-
-mail_handler.handle(test_event)
 
 def main():
 
     print("=== SYSTEM STARTING ===")
 
-    # INIT DB
+    # Initialize database
     init_db()
 
+    # Initialize authentication and ensure default admin exists
     auth_service = AuthService()
     auth_service.ensure_default_admin()
+
     event_bus = EventBus()
 
-    # HANDLERS
+    # Register core handlers
     db_handler = DBHandler()
     video_handler = VideoRecorderHandler(fps=FPS)
     snapshot_handler = SnapshotHandler(event_bus)
@@ -60,7 +58,48 @@ def main():
     event_bus.register(video_handler)
     event_bus.register(snapshot_handler)
 
-    # CAMERA DETECTION
+    # Initialize notification layer
+    user_repo = UserRepository()
+    notification_service = NotificationService(user_repo)
+
+    # SMTP provider (default / fallback)
+    email_provider = SMTPProvider(
+        SMTP_HOST,
+        SMTP_PORT,
+        SMTP_USERNAME,
+        SMTP_PASSWORD,
+        SMTP_USE_SSL
+    )
+
+    # Production alternative (example)
+    # email_provider = SendGridProvider(
+    #     SENDGRID_API_KEY,
+    #     "alerts@yourdomain.com"
+    # )
+
+    mail_handler = MailHandler(
+        email_provider,
+        notification_service,
+        MAIL_COOLDOWN
+    )
+
+    event_bus.register(mail_handler)
+
+    # Initialize GSM if enabled
+    if GSM_ENABLED:
+        gsm_client = GSMClient(GSM_PORT, GSM_BAUDRATE)
+        gsm_client.connect()
+
+        sms_service = SMSService("+48123456789")
+        gsm_handler = GSMHandler(
+            gsm_client,
+            sms_service,
+            GSM_COOLDOWN
+        )
+
+        event_bus.register(gsm_handler)
+
+    # Detect cameras
     detected = detect_cameras()
 
     if not detected:
@@ -69,37 +108,9 @@ def main():
 
     cameras = {}
 
-    # MAILER
-    user_repo = UserRepository()
-    notification_service = NotificationService(user_repo)
-
-    mail_handler = MailHandler(
-        SMTP_HOST,
-        SMTP_PORT,
-        SMTP_USERNAME,
-        SMTP_PASSWORD,
-        notification_service,
-        MAIL_COOLDOWN,
-        SMTP_USE_SSL
-    )
-    event_bus.register(mail_handler)
-
-    if GSM_ENABLED:
-        gsm_client = GSMClient(GSM_PORT, GSM_BAUDRATE)
-        # gsm_client.connect()
-
-        sms_service = SMSService("+48123456789") # test number
-        gsm_handler = GSMHandler(
-            gsm_client, 
-            sms_service, 
-            GSM_COOLDOWN
-        )
-
-        event_bus.register(gsm_handler)
-
     for cam_id, cfg in detected.items():
 
-        print(f"[MAIN] Initializing camera {cfg['index']}")
+        print(f"[MAIN] Initializing camera index {cfg['index']}")
 
         cam = USBCamera(
             cfg["index"],
@@ -132,7 +143,7 @@ def main():
             "name": cfg["name"]
         }
 
-    # STREAM
+    # Start web stream
     set_shared_cameras(cameras)
     start_stream()
 
@@ -140,7 +151,7 @@ def main():
 
     running = True
 
-    # SIGNAL HANDLER
+    # Graceful shutdown handler
     def shutdown_handler(signum, frame):
         nonlocal running
         print("\n=== SHUTDOWN SIGNAL RECEIVED ===")
@@ -149,7 +160,7 @@ def main():
     signal.signal(signal.SIGINT, shutdown_handler)
     signal.signal(signal.SIGTERM, shutdown_handler)
 
-    # MAIN LOOP
+    # Main processing loop
     try:
         while running:
 
