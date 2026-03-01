@@ -6,7 +6,8 @@ from flask import (
     redirect,
     session,
     url_for,
-    render_template
+    render_template,
+    jsonify
 )
 from functools import wraps
 from utils.overlay import draw_overlay
@@ -20,15 +21,20 @@ import time
 import os
 from datetime import timedelta
 
+#FLASK INIT
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
 app = Flask(
     __name__,
-    template_folder="templates",
-    static_folder="static"
+    template_folder=os.path.join(BASE_DIR, "templates"),
+    static_folder=os.path.join(BASE_DIR, "static")
 )
 
 app.secret_key = os.getenv("SECRET_KEY", "dev_secret")
 
-# SESSION SECURITY
+#SESSION SECURITY
+
 app.config["SESSION_COOKIE_HTTPONLY"] = True
 app.config["SESSION_COOKIE_SECURE"] = False
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
@@ -41,7 +47,8 @@ user_repo = UserRepository()
 
 shared_cameras = {}
 
-# AUTH DECORATORS
+#AUTH DECORATORS
+
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -63,12 +70,14 @@ def role_required(role):
         return decorated_function
     return wrapper
 
-# CAMERA SHARING
+#CAMERA SHARING
+
 def set_shared_cameras(cameras):
     global shared_cameras
     shared_cameras = cameras
 
-# VIDEO STREAM GENERATOR
+#VIDEO STREAM GENERATOR
+
 def generate_frames(cam_id):
     while True:
         data = shared_cameras.get(cam_id)
@@ -95,20 +104,22 @@ def generate_frames(cam_id):
             b"\r\n"
         )
 
-        time.sleep(0.05)  # PI FRIENDLY FPS
+        time.sleep(0.05)  # Raspberry Pi friendly FPS
 
-# STATUS API
+#STATUS API
 @app.route("/api/status")
 @login_required
 def api_status():
     cameras_online = len(shared_cameras)
-    return {
+
+    return jsonify({
         "ai": True,
         "gsm": False,
         "cameras": cameras_online > 0
-    }
+    })
 
-# AUTH ROUTES
+#AUTH ROUTES
+
 @app.route("/login", methods=["GET", "POST"])
 def login():
     error = None
@@ -135,7 +146,8 @@ def logout():
     session.clear()
     return redirect(url_for("login"))
 
-# DASHBOARD
+#DASHBOARD
+
 @app.route("/")
 @login_required
 def index():
@@ -162,7 +174,30 @@ def index():
 
     return render_template("dashboard.html", cameras=cameras_data)
 
-# ADMIN PANEL
+#EVENTS PAGE
+@app.route("/events")
+@login_required
+def events_page():
+    # Acually white list of events is not implemented yet, so we just return empty page
+    return render_template("events.html", events=[])
+
+#SYSTEM PAGE
+
+@app.route("/system")
+@login_required
+def system_page():
+
+    cameras_count = len(shared_cameras)
+
+    return render_template(
+        "system.html",
+        cameras_count=cameras_count,
+        disk_usage="—",
+        uptime="—"
+    )
+
+#ADMIN PANEL
+
 @app.route("/admin", methods=["GET", "POST"])
 @login_required
 @role_required("admin")
@@ -210,7 +245,8 @@ def admin_panel():
 
     return render_template("admin.html", users=users, login_logs=login_logs)
 
-# VIDEO ROUTE
+#VIDEO ROUTE
+
 @app.route("/video/<int:cam_id>")
 @login_required
 def video(cam_id):
@@ -228,7 +264,8 @@ def video(cam_id):
         mimetype="multipart/x-mixed-replace; boundary=frame"
     )
 
-# START SERVER
+# ================= START SERVER =================
+
 def start_stream():
     threading.Thread(
         target=lambda: app.run(
