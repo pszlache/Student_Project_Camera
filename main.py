@@ -5,6 +5,7 @@ import sys
 from camera.usb_camera import USBCamera
 from camera.detect import detect_cameras
 
+from core.handlers import mail_handler
 from motion.motion_detector import MotionDetector
 from ai.person_detector import PersonDetector
 
@@ -30,6 +31,14 @@ from core.services.auth_service import AuthService
 from logs.db import init_db
 from config import *
 
+from core.events import PresenceStartEvent
+
+test_event = PresenceStartEvent(
+    cam_id=0,
+    camera_name="TestCam"
+)
+
+mail_handler.handle(test_event)
 
 def main():
 
@@ -166,5 +175,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
