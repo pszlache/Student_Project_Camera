@@ -21,19 +21,20 @@ import time
 import os
 from datetime import timedelta
 
-#FLASK INIT
+# ================= FLASK INIT =================
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 app = Flask(
     __name__,
     template_folder=os.path.join(BASE_DIR, "templates"),
-    static_folder=os.path.join(BASE_DIR, "static")
+    static_folder=os.path.join(BASE_DIR, "static"),
+    static_url_path="/static"
 )
 
 app.secret_key = os.getenv("SECRET_KEY", "dev_secret")
 
-#SESSION SECURITY
+# ================= SESSION SECURITY =================
 
 app.config["SESSION_COOKIE_HTTPONLY"] = True
 app.config["SESSION_COOKIE_SECURE"] = False
@@ -47,7 +48,7 @@ user_repo = UserRepository()
 
 shared_cameras = {}
 
-#AUTH DECORATORS
+# ================= AUTH DECORATORS =================
 
 def login_required(f):
     @wraps(f)
@@ -70,13 +71,13 @@ def role_required(role):
         return decorated_function
     return wrapper
 
-#CAMERA SHARING
+# ================= CAMERA SHARING =================
 
 def set_shared_cameras(cameras):
     global shared_cameras
     shared_cameras = cameras
 
-#VIDEO STREAM GENERATOR
+# ================= STREAM =================
 
 def generate_frames(cam_id):
     while True:
@@ -93,7 +94,12 @@ def generate_frames(cam_id):
         presence_active = data["presence_service"].presence_active
         overlay = draw_overlay(frame.copy(), presence_active)
 
-        ret, buffer = cv2.imencode(".jpg", overlay, [int(cv2.IMWRITE_JPEG_QUALITY), 70])
+        ret, buffer = cv2.imencode(
+            ".jpg",
+            overlay,
+            [int(cv2.IMWRITE_JPEG_QUALITY), 70]
+        )
+
         if not ret:
             continue
 
@@ -104,9 +110,10 @@ def generate_frames(cam_id):
             b"\r\n"
         )
 
-        time.sleep(0.05)  # Raspberry Pi friendly FPS
+        time.sleep(0.05)
 
-#STATUS API
+# ================= STATUS API =================
+
 @app.route("/api/status")
 @login_required
 def api_status():
@@ -118,7 +125,7 @@ def api_status():
         "cameras": cameras_online > 0
     })
 
-#AUTH ROUTES
+# ================= AUTH ROUTES =================
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -128,7 +135,11 @@ def login():
         email = request.form.get("email")
         password = request.form.get("password")
 
-        user = auth_service.authenticate(email, password, request.remote_addr)
+        user = auth_service.authenticate(
+            email,
+            password,
+            request.remote_addr
+        )
 
         if user:
             session["user"] = user
@@ -146,7 +157,7 @@ def logout():
     session.clear()
     return redirect(url_for("login"))
 
-#DASHBOARD
+# ================= DASHBOARD =================
 
 @app.route("/")
 @login_required
@@ -174,78 +185,33 @@ def index():
 
     return render_template("dashboard.html", cameras=cameras_data)
 
-#EVENTS PAGE
+# ================= EVENTS =================
+
 @app.route("/events")
 @login_required
 def events_page():
-    # Acually white list of events is not implemented yet, so we just return empty page
     return render_template("events.html", events=[])
 
-#SYSTEM PAGE
+# ================= SYSTEM =================
 
 @app.route("/system")
 @login_required
 def system_page():
-
-    cameras_count = len(shared_cameras)
-
     return render_template(
         "system.html",
-        cameras_count=cameras_count,
+        cameras_count=len(shared_cameras),
         disk_usage="—",
         uptime="—"
     )
 
-#ADMIN PANEL
+# ================= RECORDS =================
 
-@app.route("/admin", methods=["GET", "POST"])
+@app.route("/records/<int:cam_id>")
 @login_required
-@role_required("admin")
-def admin_panel():
+def records_page(cam_id):
+    return f"<h2>Records for camera {cam_id} (module coming soon)</h2>"
 
-    if request.method == "POST":
-
-        action = request.form.get("action")
-
-        if action == "create_user":
-            email = request.form.get("email")
-            password = request.form.get("password")
-            role = request.form.get("role")
-            if email and password:
-                auth_service.create_user(email, password, role)
-
-        elif action == "delete_user":
-            user_id = int(request.form.get("user_id"))
-            if session["user"]["id"] != user_id:
-                user_repo.delete_user_by_id(user_id)
-
-        elif action == "assign_camera":
-            user_id = int(request.form.get("user_id"))
-            camera_id_raw = request.form.get("camera_id")
-            if camera_id_raw == "":
-                user_repo.remove_all_cameras(user_id)
-            else:
-                user_repo.assign_camera(user_id, int(camera_id_raw))
-
-        elif action == "remove_camera":
-            user_id = int(request.form.get("user_id"))
-            camera_id = int(request.form.get("camera_id"))
-            user_repo.remove_camera(user_id, camera_id)
-
-        elif action == "toggle_notifications":
-            user_id = int(request.form.get("user_id"))
-            enabled = int(request.form.get("enabled"))
-            if enabled:
-                user_repo.enable_notifications(user_id)
-            else:
-                user_repo.disable_notifications(user_id)
-
-    users = user_repo.get_all_users()
-    login_logs = user_repo.get_login_logs(50)
-
-    return render_template("admin.html", users=users, login_logs=login_logs)
-
-#VIDEO ROUTE
+# ================= VIDEO =================
 
 @app.route("/video/<int:cam_id>")
 @login_required
@@ -264,7 +230,7 @@ def video(cam_id):
         mimetype="multipart/x-mixed-replace; boundary=frame"
     )
 
-# ================= START SERVER =================
+# ================= START =================
 
 def start_stream():
     threading.Thread(

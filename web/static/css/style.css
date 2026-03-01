@@ -396,3 +396,35 @@ body {
     display: flex;
     gap: 6px;
 }
+
+/* ================= STATUS ITEM LABEL ================= */
+
+.status-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    opacity: 0.9;
+}
+
+/* ================= CLICKABLE CAMERA CARD ================= */
+
+.camera-card {
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.camera-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+}
+
+/* ================= RECORDS BUTTON ================= */
+
+.camera-actions a.secondary {
+    background: #111827;
+}
+
+.camera-actions a.secondary:hover {
+    background: #374151;
+}

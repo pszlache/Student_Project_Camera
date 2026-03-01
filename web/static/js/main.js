@@ -1,13 +1,7 @@
-//STATUS DOTS
-
 async function updateStatus() {
     try {
         const res = await fetch("/api/status");
-
-        if (!res.ok) {
-            console.error("Status API error");
-            return;
-        }
+        if (!res.ok) return;
 
         const data = await res.json();
 
@@ -15,8 +9,15 @@ async function updateStatus() {
         setDot("dot-gsm", data.gsm);
         setDot("dot-cameras", data.cameras);
 
+        setLabel("label-ai", data.ai ? "AI: OK" : "AI: ERROR");
+        setLabel("label-gsm", data.gsm ? "GSM: READY" : "GSM: OFF");
+        setLabel(
+            "label-cameras",
+            data.cameras ? "Cameras: ONLINE" : "Cameras: NONE"
+        );
+
     } catch (e) {
-        console.error("Status fetch failed:", e);
+        console.error("Status error:", e);
     }
 }
 
@@ -26,17 +27,15 @@ function setDot(id, ok) {
 
     el.classList.remove("ok", "warn", "err");
 
-    if (ok === true) {
-        el.classList.add("ok");
-    } else if (ok === false) {
-        el.classList.add("err");
-    } else {
-        el.classList.add("warn");
-    }
+    if (ok === true) el.classList.add("ok");
+    else if (ok === false) el.classList.add("err");
+    else el.classList.add("warn");
 }
 
-// Update every 3 seconds
-setInterval(updateStatus, 3000);
+function setLabel(id, text) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = text;
+}
 
-// Initial call
+setInterval(updateStatus, 3000);
 updateStatus();

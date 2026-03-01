@@ -5,18 +5,15 @@
     <title>{{ title or "Presence Monitor" }}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 
 <body>
 
 <div class="app">
 
-    <!-- SIDEBAR -->
     <aside class="sidebar">
-        <div class="logo">
-            Presence Monitor
-        </div>
+        <div class="logo">Presence Monitor</div>
 
         <nav>
             <a href="/">Dashboard</a>
@@ -30,28 +27,34 @@
         </nav>
     </aside>
 
-    <!-- MAIN -->
     <div class="main">
 
-        <!-- TOPBAR -->
         <header class="topbar">
 
             <div class="status">
-                <span id="dot-ai" class="dot" title="AI"></span>
-                <span id="dot-gsm" class="dot" title="GSM"></span>
-                <span id="dot-cameras" class="dot" title="Cameras"></span>
+                <div class="status-item">
+                    <span id="dot-ai" class="dot"></span>
+                    <span id="label-ai">AI</span>
+                </div>
+
+                <div class="status-item">
+                    <span id="dot-gsm" class="dot"></span>
+                    <span id="label-gsm">GSM</span>
+                </div>
+
+                <div class="status-item">
+                    <span id="dot-cameras" class="dot"></span>
+                    <span id="label-cameras">Cameras</span>
+                </div>
             </div>
 
             <div class="user">
-                {% if session.get("user") %}
-                    {{ session["user"]["email"] }}
-                {% endif %}
-                <a href="/logout" class="logout">Logout</a>
+                {{ session["user"]["email"] }}
+                <a href="/logout">Logout</a>
             </div>
 
         </header>
 
-        <!-- CONTENT -->
         <main class="content">
             {% block content %}{% endblock %}
         </main>
