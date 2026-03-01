@@ -268,19 +268,34 @@ def serve_snapshot(cam_id, filename):
 @login_required
 def events_page():
 
-    raw_events = user_repo.get_recent_events()
+    conn = _get_connection()
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT camera_name, start_time, end_time
+        FROM presence_events
+        ORDER BY id DESC
+        LIMIT 50
+    """)
+
+    rows = cursor.fetchall()
+    conn.close()
+
     events = []
 
-    for e in raw_events:
-        duration = None
+    for row in rows:
+        start = row["start_time"]
+        end = row["end_time"]
 
-        if e.get("end_time"):
-            duration = (e["end_time"] - e["start_time"]).total_seconds()
+        duration = None
+        if start and end:
+            duration = "—"
 
         events.append({
-            "camera_id": e["camera_id"],
-            "start_time": e["start_time"],
-            "end_time": e.get("end_time"),
+            "camera_id": row["camera_name"],
+            "start_time": start,
+            "end_time": end,
             "duration": duration
         })
 

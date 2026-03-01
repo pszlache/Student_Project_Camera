@@ -2,12 +2,17 @@ import sqlite3
 import os
 from datetime import datetime
 
-DB_PATH = "logs/events.db"
+# ================= DB CONFIG =================
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DB_PATH = os.path.join(BASE_DIR, "events.db")
 
 
 def _get_connection():
     return sqlite3.connect(DB_PATH, timeout=5)
 
+
+# ================= INIT DATABASE =================
 
 def init_db():
 
@@ -20,7 +25,8 @@ def init_db():
     try:
         cursor = conn.cursor()
 
-        # Users table
+        # ================= USERS =================
+
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -31,7 +37,8 @@ def init_db():
             )
         """)
 
-        # User-Camera permissions (many-to-many)
+        # ================= USER-CAMERA PERMISSIONS =================
+
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS user_cameras (
                 user_id INTEGER NOT NULL,
@@ -41,25 +48,27 @@ def init_db():
             )
         """)
 
-        # Login logs table
+        # ================= LOGIN LOGS =================
+
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS login_logs (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 email TEXT NOT NULL,
-                success INTEGER NOT NULL,
                 ip_address TEXT,
+                success INTEGER NOT NULL,
                 timestamp TEXT NOT NULL
             )
         """)
 
-        # Login logs table
+        # ================= PRESENCE EVENTS =================
+
         cursor.execute("""
-            CREATE TABLE IF NOT EXISTS login_logs (
+            CREATE TABLE IF NOT EXISTS presence_events (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                email TEXT NOT NULL,
-                ip_address TEXT,
-                success INTEGER NOT NULL,
-                timestamp TEXT NOT NULL
+                camera_name TEXT NOT NULL,
+                start_time TEXT NOT NULL,
+                end_time TEXT,
+                snapshot_path TEXT
             )
         """)
 
@@ -68,6 +77,8 @@ def init_db():
     finally:
         conn.close()
 
+
+# ================= PRESENCE START =================
 
 def log_presence_start(camera_name):
 
@@ -83,8 +94,8 @@ def log_presence_start(camera_name):
         """, (camera_name, start_time))
 
         event_id = cursor.lastrowid
-
         conn.commit()
+
         return event_id
 
     except sqlite3.Error as e:
@@ -94,6 +105,8 @@ def log_presence_start(camera_name):
     finally:
         conn.close()
 
+
+# ================= PRESENCE END =================
 
 def log_presence_end(event_id, snapshot_path=None):
 
@@ -119,6 +132,9 @@ def log_presence_end(event_id, snapshot_path=None):
 
     finally:
         conn.close()
+
+
+# ================= LOGIN ATTEMPTS =================
 
 def log_login_attempt(email, ip_address, success):
 

@@ -1,9 +1,8 @@
 from flask import Blueprint, render_template_string
+from logs.db import _get_connection
 import sqlite3
 
 logs_bp = Blueprint("logs", __name__)
-
-DB_PATH = "logs/events.db"
 
 HTML = """
 <!doctype html>
@@ -30,13 +29,13 @@ HTML = """
 </tr>
 {% for row in rows %}
 <tr>
-    <td>{{ row[0] }}</td>
-    <td>{{ row[1] }}</td>
-    <td>{{ row[2] }}</td>
-    <td>{{ row[3] }}</td>
+    <td>{{ row["id"] }}</td>
+    <td>{{ row["camera_name"] }}</td>
+    <td>{{ row["start_time"] }}</td>
+    <td>{{ row["end_time"] }}</td>
     <td>
-        {% if row[4] %}
-            <a href="/{{ row[4] }}" target="_blank">View</a>
+        {% if row["snapshot_path"] %}
+            <a href="/{{ row["snapshot_path"] }}" target="_blank">View</a>
         {% else %}
             —
         {% endif %}
@@ -50,17 +49,19 @@ HTML = """
 
 @logs_bp.route("/logs")
 def show_logs():
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
 
-    c.execute("""
+    conn = _get_connection()
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+
+    cursor.execute("""
         SELECT id, camera_name, start_time, end_time, snapshot_path
         FROM presence_events
         ORDER BY id DESC
         LIMIT 100
     """)
 
-    rows = c.fetchall()
+    rows = cursor.fetchall()
     conn.close()
 
     return render_template_string(HTML, rows=rows)

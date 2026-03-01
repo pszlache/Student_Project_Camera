@@ -236,3 +236,32 @@ class UserRepository:
             return [dict(row) for row in rows]
         finally:
             conn.close()
+
+    def get_recent_events(self, limit=50):
+
+        import sqlite3
+
+        conn = sqlite3.connect("logs/events.db")
+        conn.row_factory = sqlite3.Row
+        c = conn.cursor()
+
+        c.execute("""
+            SELECT camera_name, start_time, end_time
+            FROM presence_events
+            ORDER BY id DESC
+            LIMIT ?
+        """, (limit,))
+
+        rows = c.fetchall()
+        conn.close()
+
+        events = []
+
+        for row in rows:
+            events.append({
+                "camera_id": row["camera_name"],
+                "start_time": row["start_time"],
+                "end_time": row["end_time"]
+            })
+
+        return events
