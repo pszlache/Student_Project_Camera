@@ -34,8 +34,12 @@
                     </div>
 
                     <div>
-                        <strong>Duration:</strong> 
-                        {{ event.duration | round(1) }} s
+                        <strong>Duration:</strong>
+                        {% if event.duration is not none %}
+                            {{ event.duration | round(1) }} s
+                        {% else %}
+                            —
+                        {% endif %}
                     </div>
                 {% else %}
                     <div class="badge active">

@@ -15,6 +15,8 @@ from utils.overlay import draw_overlay
 from web.logs import logs_bp
 from core.services.auth_service import AuthService
 from core.repositories.user_repository import UserRepository
+from logs.db import _get_connection
+import sqlite3
 
 import cv2
 import threading
@@ -296,7 +298,7 @@ def events_page():
             "camera_id": row["camera_name"],
             "start_time": start,
             "end_time": end,
-            "duration": duration
+            "duration": None
         })
 
     return render_template("events.html", events=events)
