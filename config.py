@@ -31,12 +31,14 @@ CAMERAS = {
 PRESENCE_TIMEOUT = 3  # seconds
 
 # SMTP CONFIGURATION
-SMTP_USE_SSL = True
-SMTP_HOST = "smtp.gmail.com"
-SMTP_PORT = 465
+EMAIL_PROVIDER = "smtp"
 
-SMTP_USERNAME = "twojmail@gmail.com"
-SMTP_PASSWORD = "tutaj_wklej_haslo_aplikacyjne"
+SMTP_USE_SSL = False
+SMTP_HOST = "smtp.gmail.com"
+SMTP_PORT = 587
+
+SMTP_USERNAME = "example@gmail.com"
+SMTP_PASSWORD = "my 16 character app password"
 
 MAIL_COOLDOWN = 60
 
