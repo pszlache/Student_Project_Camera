@@ -1,8 +1,5 @@
 import threading
 import queue
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
 import time
 
 from core.events import EventType
@@ -10,29 +7,27 @@ from core.events import EventType
 
 class MailHandler:
 
-    def _send_email(self, task):
+    def __init__(self, email_provider, notification_service, cooldown=60):
+        self.email_provider = email_provider
+        self.notification_service = notification_service
+        self.cooldown = cooldown
 
-        subject = f"ALERT: Presence detected on camera {task['camera_name']}"
-        body = (
-            f"Intrusion detected.\n\n"
-            f"Camera: {task['camera_name']}\n"
-            f"Camera ID: {task['cam_id']}\n"
-            f"Timestamp: {task['timestamp']}\n"
+        self.queue = queue.Queue()
+        self.last_sent = {}
+
+        self.worker = threading.Thread(
+            target=self._worker_loop,
+            daemon=True
         )
-
-        self.email_provider.send(
-            task["recipients"],
-            subject,
-            body
-        )
-
-        print(f"[MAIL] Sent to {len(task['recipients'])} recipient(s)")
+        self.worker.start()
 
     def handle(self, event):
         if event.type != EventType.PRESENCE_START:
             return
 
-        recipients = self.notification_service.get_recipients_for_camera(event.cam_id)
+        recipients = self.notification_service.get_recipients_for_camera(
+            event.cam_id
+        )
 
         if not recipients:
             return
@@ -71,28 +66,10 @@ class MailHandler:
             f"Timestamp: {task['timestamp']}\n"
         )
 
-        msg = MIMEMultipart()
-        msg["From"] = self.username
-        msg["To"] = ", ".join(task["recipients"])
-        msg["Subject"] = subject
-        msg.attach(MIMEText(body, "plain"))
+        self.email_provider.send(
+            task["recipients"],
+            subject,
+            body
+        )
 
-        try:
-            if self.smtp_use_ssl:
-                server = smtplib.SMTP_SSL(self.smtp_host, self.smtp_port)
-            else:
-                server = smtplib.SMTP(self.smtp_host, self.smtp_port)
-                server.starttls()
-
-            server.login(self.username, self.password)
-            server.sendmail(
-                self.username,
-                task["recipients"],
-                msg.as_string()
-            )
-            server.quit()
-
-            print(f"[MAIL] Sent to {len(task['recipients'])} recipient(s)")
-
-        except Exception as e:
-            print(f"[MAIL] SMTP error: {e}")
+        print(f"[MAIL] Sent to {len(task['recipients'])} recipient(s)")

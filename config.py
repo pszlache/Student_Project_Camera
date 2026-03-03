@@ -43,7 +43,7 @@ SMTP_PASSWORD = "my 16 character app password"
 MAIL_COOLDOWN = 60
 
 # GSM CONFIG
-GSM_ENABLED = True
+GSM_ENABLED = False
 GSM_PORT = "/dev/serial0"
 GSM_BAUDRATE = 115200
 GSM_COOLDOWN = 300 # per camera, in seconds
