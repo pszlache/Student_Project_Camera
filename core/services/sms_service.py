@@ -1,17 +1,17 @@
 class SMSService:
 
-    def __init__(self, gsm_client):
-        self.gsm = gsm_client
+    def __init__(self, user_repository):
+        self.user_repository = user_repository
 
-    def send_sms(self, number, message):
+    def get_numbers_for_camera(self, cam_id):
 
-        self.gsm.send_command("AT+CMGF=1")
+        print(f"[SMS] Fetching numbers for camera {cam_id}")
 
-        self.gsm.send_command(
-            f'AT+CMGS="{number}"',
-            expect=">"
-        )
+        numbers = self.user_repository.get_notification_phones(cam_id)
 
-        self.gsm.send_raw(message + "\x1A")
+        print(f"[SMS] Numbers from DB: {numbers}")
 
-        return "OK"
+        if not numbers:
+            print("[SMS] No phone numbers eligible for notifications")
+
+        return numbers

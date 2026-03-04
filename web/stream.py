@@ -125,7 +125,7 @@ def api_status():
 
     return jsonify({
         "ai": True,
-        "gsm": False,
+        "gsm": True,
         "cameras": cameras_online > 0
     })
 
@@ -323,36 +323,66 @@ def system_page():
 def admin_panel():
 
     if request.method == "POST":
+
         action = request.form.get("action")
 
+        # ================= CREATE USER =================
+
         if action == "create_user":
+
             email = request.form.get("email")
             phone = request.form.get("phone")
             password = request.form.get("password")
             role = request.form.get("role")
+
+            print(f"[ADMIN] Create user: {email} | phone={phone}")
+
             if email and password:
-                auth_service.create_user(email, password, role)
+                auth_service.create_user(email, password, role, phone)
+
+        # ================= DELETE USER =================
 
         elif action == "delete_user":
+
             user_id = int(request.form.get("user_id"))
+
             if session["user"]["id"] != user_id:
                 user_repo.delete_user_by_id(user_id)
 
+        # ================= ASSIGN CAMERA =================
+
         elif action == "assign_camera":
+
             user_id = int(request.form.get("user_id"))
             camera_id_raw = request.form.get("camera_id")
 
+            print(f"[ADMIN] Assign camera request: user={user_id}, camera={camera_id_raw}")
+
             if camera_id_raw == "":
                 user_repo.remove_all_cameras(user_id)
+                print(f"[ADMIN] Removed all cameras from user {user_id}")
+
             else:
-                user_repo.assign_camera(user_id, int(camera_id_raw))
+                camera_id = int(camera_id_raw)
+
+                user_repo.remove_all_cameras(user_id)
+                user_repo.assign_camera(user_id, camera_id)
+
+                print(f"[ADMIN] Assigned camera {camera_id} to user {user_id}")
+
+        # ================= REMOVE CAMERA =================
 
         elif action == "remove_camera":
+
             user_id = int(request.form.get("user_id"))
             camera_id = int(request.form.get("camera_id"))
+
             user_repo.remove_camera(user_id, camera_id)
 
+        # ================= TOGGLE NOTIFICATIONS =================
+
         elif action == "toggle_notifications":
+
             user_id = int(request.form.get("user_id"))
             enabled = int(request.form.get("enabled"))
 
@@ -364,8 +394,11 @@ def admin_panel():
     users = user_repo.get_all_users()
     login_logs = user_repo.get_login_logs(50)
 
-    return render_template("admin.html", users=users, login_logs=login_logs)
-
+    return render_template(
+        "admin.html",
+        users=users,
+        login_logs=login_logs
+    )
 # ================= VIDEO =================
 
 @app.route("/video/<int:cam_id>")

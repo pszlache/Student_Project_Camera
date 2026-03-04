@@ -90,7 +90,7 @@ def main():
         gsm_client = GSMClient(GSM_PORT, GSM_BAUDRATE)
         gsm_client.connect()
 
-        sms_service = SMSService(gsm_client)
+        sms_service = SMSService(user_repo)
 
         gsm_handler = GSMHandler(
             gsm_client,

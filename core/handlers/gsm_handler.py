@@ -7,7 +7,7 @@ from core.events import EventType
 
 class GSMHandler:
 
-    def __init__(self, gsm_client, sms_service, cooldown, notification_service):
+    def __init__(self, gsm_client, sms_service, cooldown=60, notification_service=None):
 
         self.gsm_client = gsm_client
         self.sms_service = sms_service
@@ -28,7 +28,7 @@ class GSMHandler:
         if event.type != EventType.PRESENCE_START:
             return
 
-        numbers = self.notification_service.get_sms_recipients_for_camera(event.cam_id)
+        numbers = self.sms_service.get_numbers_for_camera(event.cam_id)
 
         if not numbers:
             return
@@ -44,14 +44,12 @@ class GSMHandler:
         self.queue.put({
             "numbers": numbers,
             "camera_name": event.camera_name,
-            "cam_id": event.cam_id,
-            "timestamp": event.timestamp
+            "cam_id": event.cam_id
         })
 
     def _worker_loop(self):
 
         while True:
-
             task = self.queue.get()
 
             try:
@@ -65,23 +63,16 @@ class GSMHandler:
 
     def _send_sms(self, task):
 
-        message = (
-            f"ALERT: Intrusion detected\n"
-            f"Camera: {task['camera_name']}\n"
-            f"Camera ID: {task['cam_id']}\n"
-            f"Timestamp: {task['timestamp']}"
-        )
+        message = f"ALERT: Intrusion detected on camera {task['camera_name']}"
 
         for number in task["numbers"]:
 
             try:
-                response = self.sms_service.send_sms(number, message)
 
-                print(
-                    f"[GSM] SMS sent | "
-                    f"Camera: {task['cam_id']} | "
-                    f"To: {number}"
-                )
+                response = self.gsm_client.send_sms(number, message)
+
+                print(f"[GSM] SMS sent to {number}: {response}")
 
             except Exception as e:
+
                 print(f"[GSM] Failed sending to {number}: {e}")
