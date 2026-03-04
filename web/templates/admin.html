@@ -4,129 +4,143 @@
 
 <div class="admin-page">
 
-    <h1>Admin Panel</h1>
+<h1>Admin Panel</h1>
 
-    <!-- CREATE USER -->
-    <div class="admin-card">
-        <h3>Create user</h3>
+<!-- CREATE USER -->
+<div class="admin-card">
+    <h3>Create user</h3>
 
-        <form method="post" class="admin-form">
-            <input type="hidden" name="action" value="create_user">
+    <form method="post" class="admin-form">
+        <input type="hidden" name="action" value="create_user">
 
-            <input name="email" placeholder="Email">
-            <input name="password" type="password" placeholder="Password">
+        <input name="email" placeholder="Email" required>
+        <input type="text" name="phone" placeholder="+48123456789">
+        <input name="password" type="password" placeholder="Password" required>
 
-            <select name="role">
-                <option value="user">User</option>
-                <option value="admin">Admin</option>
-            </select>
+        <select name="role">
+            <option value="user">User</option>
+            <option value="admin">Admin</option>
+        </select>
 
-            <button type="submit">Create</button>
-        </form>
-    </div>
-
-
-    <!-- USERS TABLE -->
-    <div class="admin-card">
-        <h3>Users</h3>
-
-        <table class="admin-table">
-            <tr>
-                <th>Email</th>
-                <th>Role</th>
-                <th>Notifications</th>
-                <th>Cameras</th>
-                <th>Assign</th>
-                <th>Toggle</th>
-                <th>Delete</th>
-            </tr>
-
-            {% for u in users %}
-            <tr>
-                <td>{{ u.email }}</td>
-                <td>{{ u.role }}</td>
-                <td>
-                    {% if u.notifications_enabled %}
-                        <span class="badge active">ON</span>
-                    {% else %}
-                        <span class="badge idle">OFF</span>
-                    {% endif %}
-                </td>
-
-                <td>
-                    {% if u.cameras %}
-                        {{ u.cameras|join(", ") }}
-                    {% else %}
-                        none
-                    {% endif %}
-                </td>
-
-                <!-- ASSIGN CAMERA -->
-                <td>
-                    <form method="post" class="inline">
-                        <input type="hidden" name="action" value="assign_camera">
-                        <input type="hidden" name="user_id" value="{{ u.id }}">
-                        <input name="camera_id" placeholder="ID">
-                        <button>Assign</button>
-                    </form>
-                </td>
-
-                <!-- TOGGLE -->
-                <td>
-                    <form method="post" class="inline">
-                        <input type="hidden" name="action" value="toggle_notifications">
-                        <input type="hidden" name="user_id" value="{{ u.id }}">
-                        <input type="hidden" name="enabled"
-                               value="{{ 0 if u.notifications_enabled else 1 }}">
-                        <button>
-                            {{ "Disable" if u.notifications_enabled else "Enable" }}
-                        </button>
-                    </form>
-                </td>
-
-                <!-- DELETE -->
-                <td>
-                    <form method="post" class="inline">
-                        <input type="hidden" name="action" value="delete_user">
-                        <input type="hidden" name="user_id" value="{{ u.id }}">
-                        <button>Delete</button>
-                    </form>
-                </td>
-
-            </tr>
-            {% endfor %}
-        </table>
-    </div>
+        <button type="submit">Create</button>
+    </form>
+</div>
 
 
-    <!-- LOGIN LOGS -->
-    <div class="admin-card">
-        <h3>Login logs</h3>
+<!-- USERS TABLE -->
+<div class="admin-card">
+    <h3>Users</h3>
 
-        <table class="admin-table">
-            <tr>
-                <th>Email</th>
-                <th>IP</th>
-                <th>Status</th>
-                <th>Time</th>
-            </tr>
+    <table class="admin-table">
+        <tr>
+            <th>Email</th>
+            <th>Phone</th>
+            <th>Role</th>
+            <th>Notifications</th>
+            <th>Cameras</th>
+            <th>Assign</th>
+            <th>Toggle</th>
+            <th>Delete</th>
+        </tr>
 
-            {% for log in login_logs %}
-            <tr>
-                <td>{{ log.email }}</td>
-                <td>{{ log.ip_address }}</td>
-                <td>
-                    {% if log.success %}
-                        <span class="badge active">OK</span>
-                    {% else %}
-                        <span class="badge idle">FAIL</span>
-                    {% endif %}
-                </td>
-                <td>{{ log.timestamp }}</td>
-            </tr>
-            {% endfor %}
-        </table>
-    </div>
+        {% for u in users %}
+        <tr>
+
+            <td>{{ u.email }}</td>
+
+            <td>
+                {% if u.phone %}
+                    {{ u.phone }}
+                {% else %}
+                    —
+                {% endif %}
+            </td>
+
+            <td>{{ u.role }}</td>
+
+            <td>
+                {% if u.notifications_enabled %}
+                    <span class="badge active">ON</span>
+                {% else %}
+                    <span class="badge idle">OFF</span>
+                {% endif %}
+            </td>
+
+            <td>
+                {% if u.cameras %}
+                    {{ u.cameras|join(", ") }}
+                {% else %}
+                    none
+                {% endif %}
+            </td>
+
+            <!-- ASSIGN CAMERA -->
+            <td>
+                <form method="post" class="inline">
+                    <input type="hidden" name="action" value="assign_camera">
+                    <input type="hidden" name="user_id" value="{{ u.id }}">
+                    <input name="camera_id" placeholder="ID">
+                    <button type="submit">Assign</button>
+                </form>
+            </td>
+
+            <!-- TOGGLE NOTIFICATIONS -->
+            <td>
+                <form method="post" class="inline">
+                    <input type="hidden" name="action" value="toggle_notifications">
+                    <input type="hidden" name="user_id" value="{{ u.id }}">
+                    <input type="hidden" name="enabled"
+                           value="{{ 0 if u.notifications_enabled else 1 }}">
+                    <button type="submit">
+                        {{ "Disable" if u.notifications_enabled else "Enable" }}
+                    </button>
+                </form>
+            </td>
+
+            <!-- DELETE USER -->
+            <td>
+                <form method="post" class="inline">
+                    <input type="hidden" name="action" value="delete_user">
+                    <input type="hidden" name="user_id" value="{{ u.id }}">
+                    <button type="submit">Delete</button>
+                </form>
+            </td>
+
+        </tr>
+        {% endfor %}
+
+    </table>
+</div>
+
+
+<!-- LOGIN LOGS -->
+<div class="admin-card">
+    <h3>Login logs</h3>
+
+    <table class="admin-table">
+        <tr>
+            <th>Email</th>
+            <th>IP</th>
+            <th>Status</th>
+            <th>Time</th>
+        </tr>
+
+        {% for log in login_logs %}
+        <tr>
+            <td>{{ log.email }}</td>
+            <td>{{ log.ip_address }}</td>
+            <td>
+                {% if log.success %}
+                    <span class="badge active">OK</span>
+                {% else %}
+                    <span class="badge idle">FAIL</span>
+                {% endif %}
+            </td>
+            <td>{{ log.timestamp }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
 
 </div>
 

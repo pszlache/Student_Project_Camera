@@ -327,6 +327,7 @@ def admin_panel():
 
         if action == "create_user":
             email = request.form.get("email")
+            phone = request.form.get("phone")
             password = request.form.get("password")
             role = request.form.get("role")
             if email and password:
