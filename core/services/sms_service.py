@@ -1,7 +1,17 @@
 class SMSService:
-    def __init__(self, numbers):
-        self.numbers = numbers
 
-    def get_numbers_for_camera(self, camera_id):
-        return self.numbers
-    
+    def __init__(self, gsm_client):
+        self.gsm = gsm_client
+
+    def send_sms(self, number, message):
+
+        self.gsm.send_command("AT+CMGF=1")
+
+        self.gsm.send_command(
+            f'AT+CMGS="{number}"',
+            expect=">"
+        )
+
+        self.gsm.send_raw(message + "\x1A")
+
+        return "OK"

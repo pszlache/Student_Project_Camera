@@ -163,6 +163,7 @@ class UserRepository:
             conn.close()
 
     # NOTIFICATIONS
+    # EMAIL
     def get_notification_emails(self, camera_id):
         conn = self._get_connection()
         try:
@@ -180,6 +181,30 @@ class UserRepository:
             """, (camera_id,))
 
             return [row["email"] for row in cursor.fetchall()]
+        finally:
+            conn.close()
+    # PHONE
+    def get_notification_phones(self, camera_id):
+
+        conn = self._get_connection()
+
+        try:
+            cursor = conn.cursor()
+
+            cursor.execute("""
+                SELECT DISTINCT u.phone
+                FROM users u
+                LEFT JOIN user_cameras uc ON u.id = uc.user_id
+                WHERE u.notifications_enabled = 1
+                AND u.phone IS NOT NULL
+                AND (
+                    u.role = 'admin'
+                    OR uc.camera_id = ?
+                )
+            """, (camera_id,))
+
+            return [row["phone"] for row in cursor.fetchall()]
+
         finally:
             conn.close()
 

@@ -90,11 +90,13 @@ def main():
         gsm_client = GSMClient(GSM_PORT, GSM_BAUDRATE)
         gsm_client.connect()
 
-        sms_service = SMSService("+48123456789")
+        sms_service = SMSService(gsm_client)
+
         gsm_handler = GSMHandler(
             gsm_client,
             sms_service,
-            GSM_COOLDOWN
+            GSM_COOLDOWN,
+            notification_service
         )
 
         event_bus.register(gsm_handler)
