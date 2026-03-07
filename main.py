@@ -86,20 +86,26 @@ def main():
     event_bus.register(mail_handler)
 
     # Initialize GSM if enabled
-    if GSM_ENABLED:
-        gsm_client = GSMClient(GSM_PORT, GSM_BAUDRATE)
-        gsm_client.connect()
 
-        sms_service = SMSService(user_repo)
+    print("[MAIN] Initializing GSM modem")
 
-        gsm_handler = GSMHandler(
-            gsm_client,
-            sms_service,
-            GSM_COOLDOWN,
-            notification_service
-        )
+    gsm_client = GSMClient(
+        GSM_PORT,
+        GSM_BAUDRATE
+    )
 
-        event_bus.register(gsm_handler)
+    gsm_client.connect()
+
+    user_repo = UserRepository()
+    sms_service = SMSService(user_repo)
+
+    gsm_handler = GSMHandler(
+        gsm_client,
+        sms_service,
+        GSM_COOLDOWN
+    )
+
+    event_bus.register(gsm_handler)
 
     # Detect cameras
     detected = detect_cameras()

@@ -1,17 +1,9 @@
-import threading
-import queue
-import time
-
-from core.events import EventType
-
-
 class GSMHandler:
 
-    def __init__(self, gsm_client, sms_service, cooldown=60, notification_service=None):
+    def __init__(self, gsm_client, sms_service, cooldown=60):
 
         self.gsm_client = gsm_client
         self.sms_service = sms_service
-        self.notification_service = notification_service
         self.cooldown = cooldown
 
         self.queue = queue.Queue()
@@ -31,6 +23,7 @@ class GSMHandler:
         numbers = self.sms_service.get_numbers_for_camera(event.cam_id)
 
         if not numbers:
+            print("[GSM] No phone numbers configured")
             return
 
         now = time.time()
@@ -43,13 +36,13 @@ class GSMHandler:
 
         self.queue.put({
             "numbers": numbers,
-            "camera_name": event.camera_name,
-            "cam_id": event.cam_id
+            "camera_name": event.camera_name
         })
 
     def _worker_loop(self):
 
         while True:
+
             task = self.queue.get()
 
             try:
@@ -63,16 +56,12 @@ class GSMHandler:
 
     def _send_sms(self, task):
 
-        message = f"ALERT: Intrusion detected on camera {task['camera_name']}"
+        message = f"⚠ ALERT: Wykryto wtargnięcie - kamera {task['camera_name']}"
 
         for number in task["numbers"]:
 
-            try:
+            print(f"[GSM] Sending SMS to {number}")
 
-                response = self.gsm_client.send_sms(number, message)
+            response = self.gsm_client.send_sms(number, message)
 
-                print(f"[GSM] SMS sent to {number}: {response}")
-
-            except Exception as e:
-
-                print(f"[GSM] Failed sending to {number}: {e}")
+            print(f"[GSM] Modem response: {response}")
