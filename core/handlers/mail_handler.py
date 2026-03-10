@@ -28,22 +28,15 @@ class MailHandler:
 
         if event.type == EventType.PRESENCE_END:
 
-            self.intrusion_manager.handle_presence_end(event.cam_id)
+            if hasattr(event, "cam_id"):
+                self.intrusion_manager.handle_presence_end(event.cam_id)
+
             return
 
 
         # ================= ONLY START TRIGGERS MAIL =================
 
         if event.type != EventType.PRESENCE_START:
-            return
-
-
-        # ================= INTRUSION DECISION =================
-
-        should_notify = self.intrusion_manager.handle_presence_start(event.cam_id)
-
-        if not should_notify:
-            print("[MAIL] IntrusionManager blocked notification")
             return
 
 
@@ -58,12 +51,14 @@ class MailHandler:
             return
 
 
+        camera_name = getattr(event, "camera_name", f"Camera {event.cam_id}")
+
         print(f"[MAIL] Queueing mail for {len(recipients)} recipients")
 
 
         self.queue.put({
             "recipients": recipients,
-            "camera_name": event.camera_name,
+            "camera_name": camera_name,
             "cam_id": event.cam_id,
             "timestamp": event.timestamp
         })

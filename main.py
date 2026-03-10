@@ -1,6 +1,7 @@
 import time
 import signal
 import sys
+import threading
 
 from camera.usb_camera import USBCamera
 from camera.detect import detect_cameras
@@ -31,29 +32,28 @@ from core.services.auth_service import AuthService
 from logs.db import init_db
 from config import *
 
-# Email provider abstraction
 from core.notifications.providers.smtp_provider import SMTPProvider
-# Alternative production provider:
-# from core.notifications.providers.sendgrid_provider import SendGridProvider
 
 
 def main():
 
     print("=== SYSTEM STARTING ===")
 
-    # Initialize database
+    # ================= DATABASE =================
+
     init_db()
 
-    # Initialize authentication and ensure default admin exists
     auth_service = AuthService()
     auth_service.ensure_default_admin()
 
+    # ================= EVENT BUS =================
+
     event_bus = EventBus()
 
-    # NEW: global intrusion manager
     intrusion_manager = IntrusionManager()
 
-    # Register core handlers
+    # ================= HANDLERS =================
+
     db_handler = DBHandler()
     video_handler = VideoRecorderHandler(fps=FPS)
     snapshot_handler = SnapshotHandler(event_bus)
@@ -62,11 +62,11 @@ def main():
     event_bus.register(video_handler)
     event_bus.register(snapshot_handler)
 
-    # Initialize notification layer
+    # ================= MAIL =================
+
     user_repo = UserRepository()
     notification_service = NotificationService(user_repo)
 
-    # SMTP provider
     email_provider = SMTPProvider(
         SMTP_HOST,
         SMTP_PORT,
@@ -75,7 +75,6 @@ def main():
         SMTP_USE_SSL
     )
 
-    # Mail handler now receives intrusion_manager
     mail_handler = MailHandler(
         email_provider,
         notification_service,
@@ -85,7 +84,7 @@ def main():
 
     event_bus.register(mail_handler)
 
-    # Initialize GSM modem
+    # ================= GSM =================
 
     print("[MAIN] Initializing GSM modem")
 
@@ -94,17 +93,15 @@ def main():
 
     sms_service = SMSService(user_repo)
 
-    # GSM handler now receives intrusion_manager
     gsm_handler = GSMHandler(
         gsm_client,
-        sms_service,
-        intrusion_manager,
-        GSM_COOLDOWN
+        sms_service
     )
 
     event_bus.register(gsm_handler)
 
-    # Detect cameras
+    # ================= CAMERA DETECTION =================
+
     detected = detect_cameras()
 
     if not detected:
@@ -123,6 +120,7 @@ def main():
             FRAME_HEIGHT,
             FPS
         )
+
         cam.start()
 
         presence_service = PresenceService(
@@ -148,47 +146,72 @@ def main():
             "name": cfg["name"]
         }
 
-    # Start web stream
+    # ================= WEB STREAM =================
+
     set_shared_cameras(cameras)
-    start_stream()
+
+    threading.Thread(
+        target=start_stream,
+        daemon=True
+    ).start()
 
     print("=== SYSTEM RUNNING ===")
 
     running = True
 
-    # Graceful shutdown handler
+    # ================= SHUTDOWN =================
+
     def shutdown_handler(signum, frame):
+
         nonlocal running
+
         print("\n=== SHUTDOWN SIGNAL RECEIVED ===")
+
         running = False
 
     signal.signal(signal.SIGINT, shutdown_handler)
     signal.signal(signal.SIGTERM, shutdown_handler)
 
-    # Main processing loop
-    try:
-        while running:
+    # ================= MAIN LOOP =================
 
-            # NEW: check if intrusion should reset
-            intrusion_manager.should_reset()
+    try:
+
+        while running:
 
             for cam_id, data in cameras.items():
 
-                frame = data["camera"].read()
-                if frame is None:
-                    continue
+                try:
 
-                data["presence_service"].update(frame)
+                    frame = data["camera"].read()
+
+                    if frame is None:
+                        continue
+
+                    # VIDEO zapisuje każdą klatkę jeśli recording aktywny
+                    video_handler.write_frame(cam_id, frame)
+
+                    # AI detection
+                    data["presence_service"].update(frame)
+
+                except Exception as e:
+
+                    print("[MAIN] Camera loop error:", e)
 
             time.sleep(0.01)
 
     finally:
+
         print("=== STOPPING CAMERAS ===")
 
         for data in cameras.values():
-            data["camera"].stop()
+
+            try:
+                data["camera"].stop()
+            except:
+                pass
 
         print("=== SYSTEM SHUTDOWN COMPLETE ===")
+
         sys.exit(0)
 
 

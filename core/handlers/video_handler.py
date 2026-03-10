@@ -9,25 +9,29 @@ VIDEO_DIR = "recordings"
 
 class VideoRecorderHandler:
 
-    def __init__(self, fps=15.0):
-        self._active_recordings = {}
+    def __init__(self, fps=15):
+
         self.fps = fps
+        self._writers = {}
+
         os.makedirs(VIDEO_DIR, exist_ok=True)
+
 
     def handle(self, event):
 
         if event.type == EventType.PRESENCE_START:
             self._start_recording(event)
 
-        elif event.type == EventType.SNAPSHOT_TIMER:
-            self._write_frame(event)
-
         elif event.type == EventType.PRESENCE_END:
             self._stop_recording(event)
+
+
+    # ================= START =================
 
     def _start_recording(self, event):
 
         frame = event.frame
+
         if frame is None:
             return
 
@@ -35,10 +39,11 @@ class VideoRecorderHandler:
         height, width = frame.shape[:2]
 
         timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        filename = f"camera_{cam_id}_{timestamp}.mp4"
+
+        filename = f"camera_{cam_id}_{timestamp}.avi"
         path = os.path.join(VIDEO_DIR, filename)
 
-        fourcc = cv2.VideoWriter_fourcc(*"mp4v")
+        fourcc = cv2.VideoWriter_fourcc(*"XVID")
 
         writer = cv2.VideoWriter(
             path,
@@ -51,26 +56,36 @@ class VideoRecorderHandler:
             print("[VIDEO] Failed to open VideoWriter")
             return
 
-        self._active_recordings[cam_id] = {
+        self._writers[cam_id] = {
             "writer": writer,
             "path": path
         }
 
-        # zapisz pierwszą klatkę
-        writer.write(frame)
-
         print(f"[VIDEO] Recording started: {path}")
 
-    def _write_frame(self, event):
 
-        recording = self._active_recordings.get(event.cam_id)
+    # ================= WRITE FRAME =================
 
-        if recording and event.frame is not None:
-            recording["writer"].write(event.frame)
+    def write_frame(self, cam_id, frame):
+
+        recording = self._writers.get(cam_id)
+
+        if not recording:
+            return
+
+        try:
+            recording["writer"].write(frame)
+        except Exception as e:
+            print("[VIDEO] Frame write error:", e)
+
+
+    # ================= STOP =================
 
     def _stop_recording(self, event):
 
-        recording = self._active_recordings.get(event.cam_id)
+        cam_id = event.cam_id
+
+        recording = self._writers.get(cam_id)
 
         if not recording:
             return
@@ -79,4 +94,4 @@ class VideoRecorderHandler:
 
         print(f"[VIDEO] Recording finished: {recording['path']}")
 
-        del self._active_recordings[event.cam_id]
+        del self._writers[cam_id]

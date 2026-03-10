@@ -4,21 +4,20 @@ import threading
 
 class IntrusionManager:
 
-    def __init__(self, reset_timeout=60):
+    def __init__(self, cooldown=60):
 
-        self.reset_timeout = reset_timeout
+        self.cooldown = cooldown
 
-        # stan alarmu
-        self.intrusion_active = False
-        self.first_camera = None
-        self.last_activity = 0
+        # kiedy wysłano ostatni alert
+        self.last_alert = 0
 
-        # aktywne kamery podczas wtargnięcia
+        # kamery które aktualnie widzą ruch
         self.active_cameras = set()
 
-        # ochrona przed race condition (handlers działają w wątkach)
         self._lock = threading.Lock()
 
+
+    # ================= START PRESENCE =================
 
     def handle_presence_start(self, cam_id):
 
@@ -26,22 +25,23 @@ class IntrusionManager:
 
         with self._lock:
 
-            self.last_activity = now
             self.active_cameras.add(cam_id)
 
-            # pierwszy alarm
-            if not self.intrusion_active:
+            # sprawdzamy cooldown
+            if now - self.last_alert >= self.cooldown:
 
-                self.intrusion_active = True
-                self.first_camera = cam_id
+                self.last_alert = now
 
-                print(f"[INTRUSION] Started by camera {cam_id}")
+                print(f"[INTRUSION] Alert allowed (camera {cam_id})")
 
                 return True
 
-            # kolejne kamery
+            print(f"[INTRUSION] Cooldown active (camera {cam_id})")
+
             return False
 
+
+    # ================= END PRESENCE =================
 
     def handle_presence_end(self, cam_id):
 
@@ -50,36 +50,4 @@ class IntrusionManager:
             if cam_id in self.active_cameras:
                 self.active_cameras.remove(cam_id)
 
-            self.last_activity = time.time()
-
-
-    def should_reset(self):
-
-        with self._lock:
-
-            if not self.intrusion_active:
-                return False
-
-            # jeśli jakaś kamera nadal widzi ruch → nie resetujemy
-            if self.active_cameras:
-                return False
-
-            now = time.time()
-
-            if now - self.last_activity > self.reset_timeout:
-
-                print("[INTRUSION] System reset")
-
-                self.intrusion_active = False
-                self.first_camera = None
-                self.active_cameras.clear()
-
-                return True
-
-        return False
-
-
-    def get_first_camera(self):
-
-        with self._lock:
-            return self.first_camera
+            print(f"[INTRUSION] Camera {cam_id} cleared")

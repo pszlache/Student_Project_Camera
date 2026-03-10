@@ -7,14 +7,14 @@ from core.events import EventType
 
 class GSMHandler:
 
-    def __init__(self, gsm_client, sms_service, intrusion_manager, cooldown=60):
+    def __init__(self, gsm_client, sms_service):
 
         self.gsm_client = gsm_client
         self.sms_service = sms_service
-        self.intrusion_manager = intrusion_manager
-        self.cooldown = cooldown
 
         self.queue = queue.Queue()
+
+        self.last_sms = 0
 
         self.worker = threading.Thread(
             target=self._worker_loop,
@@ -27,30 +27,15 @@ class GSMHandler:
 
         print("[GSM] Handler received event:", event.type)
 
-        # ================= PRESENCE END =================
-
-        if event.type == EventType.PRESENCE_END:
-
-            self.intrusion_manager.handle_presence_end(event.cam_id)
-            return
-
-
-        # ================= ONLY START TRIGGERS SMS =================
-
         if event.type != EventType.PRESENCE_START:
             return
 
+        now = time.time()
 
-        # ================= INTRUSION DECISION =================
-
-        should_notify = self.intrusion_manager.handle_presence_start(event.cam_id)
-
-        if not should_notify:
-            print("[GSM] IntrusionManager blocked notification")
+        if now - self.last_sms < 10:
             return
 
-
-        # ================= GET PHONE NUMBERS =================
+        self.last_sms = now
 
         numbers = self.sms_service.get_numbers_for_camera(event.cam_id)
 
@@ -58,16 +43,15 @@ class GSMHandler:
             print("[GSM] No phone numbers configured")
             return
 
+        camera_name = getattr(event, "camera_name", f"Camera {event.cam_id}")
 
         print(f"[GSM] Queueing SMS for {len(numbers)} recipients")
 
         self.queue.put({
             "numbers": numbers,
-            "camera_name": event.camera_name
+            "camera_name": camera_name
         })
 
-
-    # ================= WORKER =================
 
     def _worker_loop(self):
 
@@ -76,19 +60,14 @@ class GSMHandler:
             task = self.queue.get()
 
             try:
-
                 self._send_sms(task)
 
             except Exception as e:
-
                 print(f"[GSM] Error sending SMS: {e}")
 
             finally:
-
                 self.queue.task_done()
 
-
-    # ================= SEND SMS =================
 
     def _send_sms(self, task):
 

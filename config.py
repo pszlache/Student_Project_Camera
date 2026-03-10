@@ -44,6 +44,6 @@ MAIL_COOLDOWN = 60
 
 # GSM CONFIG
 GSM_ENABLED = True
-GSM_PORT = "/dev/serial0"
+GSM_PORT = "/dev/ttyUSB2"
 GSM_BAUDRATE = 115200
 GSM_COOLDOWN = 300 # per camera, in seconds

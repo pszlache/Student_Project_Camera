@@ -19,6 +19,7 @@ class PresenceService:
         ai_frame_skip,
         presence_timeout
     ):
+
         self.cam_id = cam_id
         self.camera_name = camera_name
         self.motion_detector = motion_detector
@@ -28,14 +29,11 @@ class PresenceService:
         self.ai_frame_skip = ai_frame_skip
         self.presence_timeout = presence_timeout
 
-        # Presence state
         self.presence_active = False
         self.last_presence_time = 0
 
-        # AI throttling
         self.ai_counter = 0
 
-        # Snapshot timer
         self.last_snapshot_time = 0
         self.snapshot_interval = 15
 
@@ -58,7 +56,7 @@ class PresenceService:
 
                     self.last_presence_time = now
 
-                    # ================= PRESENCE START =================
+                    # ================= START =================
 
                     if not self.presence_active:
 
@@ -89,7 +87,8 @@ class PresenceService:
         else:
             self.ai_counter = 0
 
-        # ================= PRESENCE TIMEOUT =================
+
+        # ================= END =================
 
         if self.presence_active:
 
