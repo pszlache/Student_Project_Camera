@@ -1,22 +1,27 @@
 # =========================
-# Python
+# Python cache
 # =========================
 __pycache__/
 *.py[cod]
 *$py.class
 
+# =========================
 # Virtual environments
+# =========================
 .venv/
 venv/
 env/
 
-# Python build
+# =========================
+# Python build / packaging
+# =========================
 build/
 dist/
 *.egg-info/
+.eggs/
 
 # =========================
-# IDE
+# IDE / Editors
 # =========================
 .vscode/
 .vs/
@@ -29,30 +34,49 @@ logs/
 *.log
 
 # =========================
+# Testing / coverage
+# =========================
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# =========================
+# Databases
+# =========================
+*.db
+*.sqlite
+*.sqlite3
+
+# =========================
+# Runtime generated files
+# =========================
+videos/
+snapshots/
+recordings/
+
+# =========================
 # OS files
 # =========================
 .DS_Store
 Thumbs.db
 
 # =========================
-# Testing
-# =========================
-.pytest_cache/
-.coverage
-htmlcov/
-
-# =========================
-# Data / runtime files
-# =========================
-*.db
-*.sqlite3
-
-# recordings / generated files
-videos/
-snapshots/
-
-# =========================
 # Temporary files
 # =========================
 *.tmp
 *.temp
+*.swp
+*.swo
+
+# =========================
+# Environment variables
+# =========================
+.env
+.env.*
+
+# =========================
+# Raspberry Pi specific
+# =========================
+*.h264
+*.mp4
