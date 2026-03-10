@@ -11,33 +11,35 @@ class SnapshotHandler:
     def __init__(self, event_bus):
         self.event_bus = event_bus
 
+
     def handle(self, event):
 
-        # Snapshot przy rozpoczęciu wtargnięcia
+        # snapshot przy rozpoczęciu wtargnięcia
         if event.type == EventType.PRESENCE_START:
-            self._handle_snapshot(event)
+            self._save(event.frame, event.cam_id, event.camera_name)
 
-        # Snapshot co 15 sekund
+        # snapshot co 15 sekund
         elif event.type == EventType.SNAPSHOT_TIMER:
-            self._handle_snapshot(event)
+            self._save(event.frame, event.cam_id, None)
 
-    def _handle_snapshot(self, event):
 
-        if event.frame is None:
+    def _save(self, frame, cam_id, camera_name):
+
+        if frame is None:
             return
 
         path = save_snapshot(
-            event.frame,
-            prefix=f"presence_cam{event.cam_id}"
+            frame,
+            prefix=f"presence_cam{cam_id}"
         )
 
         print(f"[SNAPSHOT] Saved: {path}")
 
-        # Emit snapshot event
+        # emitujemy event o zapisanym snapshotcie
         self.event_bus.emit(
             SnapshotSavedEvent(
-                event.cam_id,
-                event.camera_name if hasattr(event, "camera_name") else None,
+                cam_id,
+                camera_name,
                 path
             )
         )

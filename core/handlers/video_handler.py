@@ -19,7 +19,7 @@ class VideoRecorderHandler:
         if event.type == EventType.PRESENCE_START:
             self._start_recording(event)
 
-        elif event.type == EventType.PRESENCE_UPDATE:
+        elif event.type == EventType.SNAPSHOT_TIMER:
             self._write_frame(event)
 
         elif event.type == EventType.PRESENCE_END:
@@ -56,6 +56,9 @@ class VideoRecorderHandler:
             "path": path
         }
 
+        # zapisz pierwszą klatkę
+        writer.write(frame)
+
         print(f"[VIDEO] Recording started: {path}")
 
     def _write_frame(self, event):
@@ -77,4 +80,3 @@ class VideoRecorderHandler:
         print(f"[VIDEO] Recording finished: {recording['path']}")
 
         del self._active_recordings[event.cam_id]
-

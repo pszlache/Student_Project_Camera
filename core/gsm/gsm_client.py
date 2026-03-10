@@ -1,6 +1,7 @@
 import os
 import termios
 import time
+import select
 
 
 class GSMClient:
@@ -18,16 +19,26 @@ class GSMClient:
 
         print(f"[GSM] Opening modem {self.port}")
 
-        self.fd = os.open(self.port, os.O_RDWR | os.O_NOCTTY)
+        self.fd = os.open(self.port, os.O_RDWR | os.O_NOCTTY | os.O_NONBLOCK)
 
         attrs = termios.tcgetattr(self.fd)
 
+        # speed
         attrs[4] = termios.B115200
         attrs[5] = termios.B115200
 
+        # enable receiver
         attrs[2] |= termios.CLOCAL | termios.CREAD
 
+        # raw mode
+        attrs[3] = 0
+        attrs[1] = 0
+        attrs[0] = 0
+
         termios.tcsetattr(self.fd, termios.TCSANOW, attrs)
+
+        # flush buffers
+        termios.tcflush(self.fd, termios.TCIOFLUSH)
 
         time.sleep(2)
 
@@ -38,25 +49,28 @@ class GSMClient:
 
     # ================= READ =================
 
-    def _read(self):
+    def _read(self, timeout=2):
 
-        data = b""
+        buffer = b""
+        start = time.time()
 
-        try:
-            while True:
+        while time.time() - start < timeout:
+
+            r, _, _ = select.select([self.fd], [], [], 0.2)
+
+            if self.fd in r:
+
                 chunk = os.read(self.fd, 1024)
-                if not chunk:
-                    break
-                data += chunk
-        except BlockingIOError:
-            pass
 
-        return data.decode(errors="ignore")
+                if chunk:
+                    buffer += chunk
+
+        return buffer.decode(errors="ignore")
 
 
     # ================= COMMAND =================
 
-    def _send_command(self, cmd, delay=1):
+    def _send_command(self, cmd, delay=0.5):
 
         print(">>>", cmd)
 
@@ -91,12 +105,11 @@ class GSMClient:
         buffer = ""
         start = time.time()
 
-        while True:
+        while time.time() - start < timeout:
 
-            if time.time() - start > timeout:
-                raise Exception("No SMS prompt")
+            r, _, _ = select.select([self.fd], [], [], 0.2)
 
-            try:
+            if self.fd in r:
 
                 data = os.read(self.fd, 1024).decode(errors="ignore")
 
@@ -106,10 +119,7 @@ class GSMClient:
                     if ">" in buffer:
                         return
 
-            except BlockingIOError:
-                pass
-
-            time.sleep(0.1)
+        raise Exception("No SMS prompt")
 
 
     # ================= SEND SMS =================
@@ -131,7 +141,7 @@ class GSMClient:
 
         os.write(self.fd, b"\x1A")
 
-        time.sleep(5)
+        time.sleep(4)
 
         resp = self._read()
 

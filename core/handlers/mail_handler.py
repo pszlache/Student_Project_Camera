@@ -24,22 +24,42 @@ class MailHandler:
 
     def handle(self, event):
 
-        # reagujemy tylko na start wtargnięcia
+        # ================= PRESENCE END =================
+
+        if event.type == EventType.PRESENCE_END:
+
+            self.intrusion_manager.handle_presence_end(event.cam_id)
+            return
+
+
+        # ================= ONLY START TRIGGERS MAIL =================
+
         if event.type != EventType.PRESENCE_START:
             return
 
-        # IntrusionManager decyduje czy to pierwszy alarm
+
+        # ================= INTRUSION DECISION =================
+
         should_notify = self.intrusion_manager.handle_presence_start(event.cam_id)
 
         if not should_notify:
+            print("[MAIL] IntrusionManager blocked notification")
             return
+
+
+        # ================= GET RECIPIENTS =================
 
         recipients = self.notification_service.get_recipients_for_camera(
             event.cam_id
         )
 
         if not recipients:
+            print("[MAIL] No recipients configured")
             return
+
+
+        print(f"[MAIL] Queueing mail for {len(recipients)} recipients")
+
 
         self.queue.put({
             "recipients": recipients,
@@ -48,6 +68,8 @@ class MailHandler:
             "timestamp": event.timestamp
         })
 
+
+    # ================= WORKER =================
 
     def _worker_loop(self):
 
@@ -64,6 +86,8 @@ class MailHandler:
             finally:
                 self.queue.task_done()
 
+
+    # ================= SEND MAIL =================
 
     def _send_email(self, task):
 
