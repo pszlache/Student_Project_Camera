@@ -25,8 +25,7 @@ import os
 import glob
 from datetime import timedelta
 
-# ================= FLASK INIT =================
-
+#FLASK INIT
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 app = Flask(
@@ -38,8 +37,7 @@ app = Flask(
 
 app.secret_key = os.getenv("SECRET_KEY", "dev_secret")
 
-# ================= SESSION SECURITY =================
-
+#SESSION SECURITY
 app.config["SESSION_COOKIE_HTTPONLY"] = True
 app.config["SESSION_COOKIE_SECURE"] = False
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
@@ -52,8 +50,7 @@ user_repo = UserRepository()
 
 shared_cameras = {}
 
-# ================= AUTH DECORATORS =================
-
+#AUTH DECORATORS
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -75,14 +72,12 @@ def role_required(role):
         return decorated_function
     return wrapper
 
-# ================= CAMERA SHARING =================
-
+#CAMERA SHARING
 def set_shared_cameras(cameras):
     global shared_cameras
     shared_cameras = cameras
 
-# ================= STREAM =================
-
+#STREAM
 def generate_frames(cam_id):
     while True:
         data = shared_cameras.get(cam_id)
@@ -116,8 +111,7 @@ def generate_frames(cam_id):
 
         time.sleep(0.05)
 
-# ================= STATUS API =================
-
+#STATUS API
 @app.route("/api/status")
 @login_required
 def api_status():
@@ -129,8 +123,7 @@ def api_status():
         "cameras": cameras_online > 0
     })
 
-# ================= AUTH =================
-
+#AUTH
 @app.route("/login", methods=["GET", "POST"])
 def login():
     error = None
@@ -161,8 +154,7 @@ def logout():
     session.clear()
     return redirect(url_for("login"))
 
-# ================= DASHBOARD =================
-
+#DASHBOARD
 @app.route("/")
 @login_required
 def index():
@@ -189,8 +181,7 @@ def index():
 
     return render_template("dashboard.html", cameras=cameras_data)
 
-# ================= CAMERA DETAIL =================
-
+#CAMERA DETAIL
 @app.route("/camera/<int:cam_id>")
 @login_required
 def camera_detail(cam_id):
@@ -211,8 +202,7 @@ def camera_detail(cam_id):
         presence=presence
     )
 
-# ================= RECORDS =================
-
+#RECORDS
 @app.route("/records/<int:cam_id>")
 @login_required
 def records_page(cam_id):
@@ -229,8 +219,7 @@ def records_page(cam_id):
         recordings=recordings
     )
 
-# ================= SNAPSHOTS =================
-
+#SNAPSHOTS
 @app.route("/snapshots/<int:cam_id>")
 @login_required
 def snapshots_page(cam_id):
@@ -247,8 +236,7 @@ def snapshots_page(cam_id):
         snapshots=snapshots
     )
 
-# ================= SERVE MEDIA =================
-
+#SERVE MEDIA
 @app.route("/media/recordings/<int:cam_id>/<path:filename>")
 @login_required
 def serve_recording(cam_id, filename):
@@ -264,8 +252,7 @@ def serve_snapshot(cam_id, filename):
     directory = os.path.join("snapshots", f"cam_{cam_id}")
     return send_from_directory(directory, filename)
 
-# ================= EVENTS =================
-
+#EVENTS
 @app.route("/events")
 @login_required
 def events_page():
@@ -303,8 +290,7 @@ def events_page():
 
     return render_template("events.html", events=events)
 
-# ================= SYSTEM =================
-
+#SYSTEM
 @app.route("/system")
 @login_required
 def system_page():
@@ -315,8 +301,7 @@ def system_page():
         version="1.0"
     )
 
-# ================= ADMIN =================
-
+#ADMIN
 @app.route("/admin", methods=["GET", "POST"])
 @login_required
 @role_required("admin")
@@ -326,8 +311,7 @@ def admin_panel():
 
         action = request.form.get("action")
 
-        # ================= CREATE USER =================
-
+        #CREATE USER
         if action == "create_user":
 
             email = request.form.get("email")
@@ -340,8 +324,7 @@ def admin_panel():
             if email and password:
                 auth_service.create_user(email, password, role, phone)
 
-        # ================= DELETE USER =================
-
+        #DELETE USER
         elif action == "delete_user":
 
             user_id = int(request.form.get("user_id"))
@@ -349,8 +332,7 @@ def admin_panel():
             if session["user"]["id"] != user_id:
                 user_repo.delete_user_by_id(user_id)
 
-        # ================= ASSIGN CAMERA =================
-
+        #ASSIGN CAMERA
         elif action == "assign_camera":
 
             user_id = int(request.form.get("user_id"))
@@ -370,8 +352,7 @@ def admin_panel():
 
                 print(f"[ADMIN] Assigned camera {camera_id} to user {user_id}")
 
-        # ================= REMOVE CAMERA =================
-
+        #REMOVE CAMERA
         elif action == "remove_camera":
 
             user_id = int(request.form.get("user_id"))
@@ -379,8 +360,7 @@ def admin_panel():
 
             user_repo.remove_camera(user_id, camera_id)
 
-        # ================= TOGGLE NOTIFICATIONS =================
-
+        #TOGGLE NOTIFICATIONS
         elif action == "toggle_notifications":
 
             user_id = int(request.form.get("user_id"))
@@ -399,8 +379,7 @@ def admin_panel():
         users=users,
         login_logs=login_logs
     )
-# ================= VIDEO =================
-
+#VIDEO
 @app.route("/video/<int:cam_id>")
 @login_required
 def video(cam_id):
@@ -418,8 +397,7 @@ def video(cam_id):
         mimetype="multipart/x-mixed-replace; boundary=frame"
     )
 
-# ================= START =================
-
+#START
 def start_stream():
     threading.Thread(
         target=lambda: app.run(

@@ -7,18 +7,11 @@ class IntrusionManager:
     def __init__(self, cooldown=60):
 
         self.cooldown = cooldown
-
-        # kiedy wysłano ostatni alert
         self.last_alert = 0
-
-        # kamery które aktualnie widzą ruch
         self.active_cameras = set()
-
         self._lock = threading.Lock()
 
-
-    # ================= START PRESENCE =================
-
+    #START PRESENCE
     def handle_presence_start(self, cam_id):
 
         now = time.time()
@@ -26,8 +19,6 @@ class IntrusionManager:
         with self._lock:
 
             self.active_cameras.add(cam_id)
-
-            # sprawdzamy cooldown
             if now - self.last_alert >= self.cooldown:
 
                 self.last_alert = now
@@ -41,8 +32,7 @@ class IntrusionManager:
             return False
 
 
-    # ================= END PRESENCE =================
-
+    #END PRESENCE
     def handle_presence_end(self, cam_id):
 
         with self._lock:

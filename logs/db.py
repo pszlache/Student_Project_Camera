@@ -2,8 +2,7 @@ import sqlite3
 import os
 from datetime import datetime
 
-# ================= DB CONFIG =================
-
+#DB CONFIG
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_DIR, "events.db")
 
@@ -12,8 +11,7 @@ def _get_connection():
     return sqlite3.connect(DB_PATH, timeout=5)
 
 
-# ================= INIT DATABASE =================
-
+#INIT DATABASE
 def init_db():
 
     # MAKE DIR FOR DB IF NEEDED
@@ -25,8 +23,7 @@ def init_db():
     try:
         cursor = conn.cursor()
 
-        # ================= USERS =================
-
+        #USERS
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -38,8 +35,7 @@ def init_db():
             )
         """)
 
-        # ================= USER-CAMERA PERMISSIONS =================
-
+        #USER-CAMERA PERMISSIONS
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS user_cameras (
                 user_id INTEGER NOT NULL,
@@ -49,8 +45,7 @@ def init_db():
             )
         """)
 
-        # ================= LOGIN LOGS =================
-
+        #LOGIN LOGS
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS login_logs (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -61,8 +56,7 @@ def init_db():
             )
         """)
 
-        # ================= PRESENCE EVENTS =================
-
+        #PRESENCE EVENTS
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS presence_events (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -79,8 +73,7 @@ def init_db():
         conn.close()
 
 
-# ================= PRESENCE START =================
-
+#PRESENCE START
 def log_presence_start(camera_name):
 
     conn = _get_connection()
@@ -107,8 +100,7 @@ def log_presence_start(camera_name):
         conn.close()
 
 
-# ================= PRESENCE END =================
-
+#PRESENCE END
 def log_presence_end(event_id, snapshot_path=None):
 
     if event_id is None:
@@ -135,8 +127,7 @@ def log_presence_end(event_id, snapshot_path=None):
         conn.close()
 
 
-# ================= LOGIN ATTEMPTS =================
-
+#LOGIN ATTEMPTS
 def log_login_attempt(email, ip_address, success):
 
     conn = _get_connection()

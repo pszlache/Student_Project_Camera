@@ -4,15 +4,13 @@ from logs import db
 
 class UserRepository:
 
-    # ================= CONNECTION =================
-
+    #CONNECTION
     def _get_connection(self):
         conn = sqlite3.connect(db.DB_PATH)
         conn.row_factory = sqlite3.Row
         return conn
 
-    # ================= USER READ =================
-
+    #USER READ
     def get_all_users(self):
         conn = self._get_connection()
 
@@ -86,8 +84,7 @@ class UserRepository:
         finally:
             conn.close()
 
-    # ================= USER MANAGEMENT =================
-
+    #USER MANAGEMENT
     def delete_user_by_id(self, user_id):
 
         conn = self._get_connection()
@@ -112,8 +109,7 @@ class UserRepository:
         finally:
             conn.close()
 
-    # ================= CAMERA PERMISSIONS =================
-
+    #CAMERA PERMISSIONS
     def assign_camera(self, user_id, camera_id):
 
         if camera_id is None:
@@ -218,8 +214,7 @@ class UserRepository:
         finally:
             conn.close()
 
-    # ================= NOTIFICATIONS =================
-
+    #NOTIFICATIONS
     def get_notification_emails(self, camera_id):
 
         conn = self._get_connection()
@@ -304,8 +299,7 @@ class UserRepository:
         finally:
             conn.close()
 
-    # ================= LOGIN LOGS =================
-
+    #LOGIN LOGS
     def log_login_attempt(self, email, ip_address, success):
 
         conn = self._get_connection()
@@ -344,8 +338,7 @@ class UserRepository:
         finally:
             conn.close()
 
-    # ================= EVENTS =================
-
+    #EVENTS
     def get_recent_events(self, limit=50):
 
         conn = sqlite3.connect(db.DB_PATH)

@@ -13,8 +13,7 @@ class GSMClient:
         self.connected = False
 
 
-    # ================= CONNECT =================
-
+    #CONNECT
     def connect(self):
 
         print(f"[GSM] Opening modem {self.port}")
@@ -47,8 +46,7 @@ class GSMClient:
         self._init_sms()
 
 
-    # ================= READ =================
-
+    #READ
     def _read(self, timeout=2):
 
         buffer = b""
@@ -68,8 +66,7 @@ class GSMClient:
         return buffer.decode(errors="ignore")
 
 
-    # ================= COMMAND =================
-
+    #COMMAND
     def _send_command(self, cmd, delay=0.5):
 
         print(">>>", cmd)
@@ -85,8 +82,7 @@ class GSMClient:
         return resp
 
 
-    # ================= INIT SMS =================
-
+    #INIT SMS
     def _init_sms(self):
 
         self._send_command("AT")
@@ -98,8 +94,7 @@ class GSMClient:
         print("[GSM] SMS initialized")
 
 
-    # ================= WAIT PROMPT =================
-
+    #WAIT PROMPT
     def _wait_prompt(self, timeout=10):
 
         buffer = ""
@@ -122,8 +117,7 @@ class GSMClient:
         raise Exception("No SMS prompt")
 
 
-    # ================= SEND SMS =================
-
+    #SEND SMS
     def send_sms(self, number, message):
 
         if not self.connected:
@@ -150,8 +144,7 @@ class GSMClient:
         return resp
 
 
-    # ================= CLOSE =================
-
+    #CLOSE
     def close(self):
 
         if self.fd:

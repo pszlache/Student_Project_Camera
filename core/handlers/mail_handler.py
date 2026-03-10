@@ -24,8 +24,7 @@ class MailHandler:
 
     def handle(self, event):
 
-        # ================= PRESENCE END =================
-
+        #PRESENCE END
         if event.type == EventType.PRESENCE_END:
 
             if hasattr(event, "cam_id"):
@@ -34,14 +33,12 @@ class MailHandler:
             return
 
 
-        # ================= ONLY START TRIGGERS MAIL =================
-
+        #ONLY START TRIGGERS MAIL
         if event.type != EventType.PRESENCE_START:
             return
 
 
-        # ================= GET RECIPIENTS =================
-
+        #GET RECIPIENTS
         recipients = self.notification_service.get_recipients_for_camera(
             event.cam_id
         )
@@ -64,8 +61,7 @@ class MailHandler:
         })
 
 
-    # ================= WORKER =================
-
+    #WORKER
     def _worker_loop(self):
 
         while True:
@@ -82,8 +78,7 @@ class MailHandler:
                 self.queue.task_done()
 
 
-    # ================= SEND MAIL =================
-
+    #SEND MAIL
     def _send_email(self, task):
 
         subject = f"ALERT: Presence detected on camera {task['camera_name']}"

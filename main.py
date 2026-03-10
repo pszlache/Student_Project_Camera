@@ -39,21 +39,18 @@ def main():
 
     print("=== SYSTEM STARTING ===")
 
-    # ================= DATABASE =================
-
+    #DATABASE
     init_db()
 
     auth_service = AuthService()
     auth_service.ensure_default_admin()
 
-    # ================= EVENT BUS =================
-
+    #EVENT BUS
     event_bus = EventBus()
 
     intrusion_manager = IntrusionManager()
 
-    # ================= HANDLERS =================
-
+    #HANDLERS
     db_handler = DBHandler()
     video_handler = VideoRecorderHandler(fps=FPS)
     snapshot_handler = SnapshotHandler(event_bus)
@@ -62,8 +59,7 @@ def main():
     event_bus.register(video_handler)
     event_bus.register(snapshot_handler)
 
-    # ================= MAIL =================
-
+    #MAIL
     user_repo = UserRepository()
     notification_service = NotificationService(user_repo)
 
@@ -84,8 +80,7 @@ def main():
 
     event_bus.register(mail_handler)
 
-    # ================= GSM =================
-
+    #GSM
     print("[MAIN] Initializing GSM modem")
 
     gsm_client = GSMClient(GSM_PORT)
@@ -100,8 +95,7 @@ def main():
 
     event_bus.register(gsm_handler)
 
-    # ================= CAMERA DETECTION =================
-
+    #CAMERA DETECTION
     detected = detect_cameras()
 
     if not detected:
@@ -146,8 +140,7 @@ def main():
             "name": cfg["name"]
         }
 
-    # ================= WEB STREAM =================
-
+    #WEB STREAM
     set_shared_cameras(cameras)
 
     threading.Thread(
@@ -159,8 +152,7 @@ def main():
 
     running = True
 
-    # ================= SHUTDOWN =================
-
+    #SHUTDOWN
     def shutdown_handler(signum, frame):
 
         nonlocal running
@@ -172,8 +164,7 @@ def main():
     signal.signal(signal.SIGINT, shutdown_handler)
     signal.signal(signal.SIGTERM, shutdown_handler)
 
-    # ================= MAIN LOOP =================
-
+    #MAIN LOOP
     try:
 
         while running:
@@ -187,7 +178,7 @@ def main():
                     if frame is None:
                         continue
 
-                    # VIDEO zapisuje każdą klatkę jeśli recording aktywny
+                    # VIDEO SAVE ACTIVE FRAME
                     video_handler.write_frame(cam_id, frame)
 
                     # AI detection

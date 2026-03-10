@@ -4,7 +4,7 @@ import threading
 import time
 
 
-# EVENT TYPES
+#EVENT TYPES
 class EventType(Enum):
     PRESENCE_START = auto()
     PRESENCE_END = auto()
@@ -13,7 +13,7 @@ class EventType(Enum):
     SYSTEM_ERROR = auto()
 
 
-# BASE EVENT
+#BASE EVENT
 @dataclass
 class Event:
     type: EventType
@@ -21,8 +21,7 @@ class Event:
     timestamp: float = field(default_factory=time.time)
 
 
-# ================= PRESENCE START =================
-
+#PRESENCE START
 @dataclass(init=False)
 class PresenceStartEvent(Event):
     cam_id: int
@@ -39,8 +38,7 @@ class PresenceStartEvent(Event):
         self.frame = frame
 
 
-# ================= SNAPSHOT TIMER =================
-
+#SNAPSHOT TIMER
 @dataclass(init=False)
 class SnapshotTimerEvent(Event):
     cam_id: int
@@ -55,8 +53,7 @@ class SnapshotTimerEvent(Event):
         self.frame = frame
 
 
-# ================= PRESENCE END =================
-
+#PRESENCE END
 @dataclass(init=False)
 class PresenceEndEvent(Event):
     cam_id: int
@@ -73,8 +70,7 @@ class PresenceEndEvent(Event):
         self.snapshot_path = snapshot_path
 
 
-# ================= SNAPSHOT SAVED =================
-
+#SNAPSHOT SAVED
 @dataclass(init=False)
 class SnapshotSavedEvent(Event):
     cam_id: int
@@ -91,8 +87,7 @@ class SnapshotSavedEvent(Event):
         self.snapshot_path = snapshot_path
 
 
-# ================= EVENT BUS =================
-
+#EVENT BUS
 class EventBus:
 
     def __init__(self):

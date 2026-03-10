@@ -26,8 +26,7 @@ class VideoRecorderHandler:
             self._stop_recording(event)
 
 
-    # ================= START =================
-
+    #START
     def _start_recording(self, event):
 
         frame = event.frame
@@ -64,8 +63,7 @@ class VideoRecorderHandler:
         print(f"[VIDEO] Recording started: {path}")
 
 
-    # ================= WRITE FRAME =================
-
+    #WRITE FRAME
     def write_frame(self, cam_id, frame):
 
         recording = self._writers.get(cam_id)
@@ -79,8 +77,7 @@ class VideoRecorderHandler:
             print("[VIDEO] Frame write error:", e)
 
 
-    # ================= STOP =================
-
+    #STOP
     def _stop_recording(self, event):
 
         cam_id = event.cam_id

@@ -56,8 +56,7 @@ class PresenceService:
 
                     self.last_presence_time = now
 
-                    # ================= START =================
-
+                    #START
                     if not self.presence_active:
 
                         self.presence_active = True
@@ -71,8 +70,7 @@ class PresenceService:
                             )
                         )
 
-                    # ================= SNAPSHOT TIMER =================
-
+                    #SNAPSHOT TIMER
                     elif now - self.last_snapshot_time >= self.snapshot_interval:
 
                         self.last_snapshot_time = now
