@@ -1,0 +1,58 @@
+# =========================
+# Python
+# =========================
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Python build
+build/
+dist/
+*.egg-info/
+
+# =========================
+# IDE
+# =========================
+.vscode/
+.vs/
+.idea/
+
+# =========================
+# Logs
+# =========================
+logs/
+*.log
+
+# =========================
+# OS files
+# =========================
+.DS_Store
+Thumbs.db
+
+# =========================
+# Testing
+# =========================
+.pytest_cache/
+.coverage
+htmlcov/
+
+# =========================
+# Data / runtime files
+# =========================
+*.db
+*.sqlite3
+
+# recordings / generated files
+videos/
+snapshots/
+
+# =========================
+# Temporary files
+# =========================
+*.tmp
+*.temp
