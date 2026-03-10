@@ -10,6 +10,7 @@ from ai.person_detector import PersonDetector
 
 from core.repositories.user_repository import UserRepository
 from core.services.notification_service import NotificationService
+from core.services.intrusion_manager import IntrusionManager
 from core.handlers.mail_handler import MailHandler
 
 from core.gsm.gsm_client import GSMClient
@@ -49,6 +50,9 @@ def main():
 
     event_bus = EventBus()
 
+    # NEW: global intrusion manager
+    intrusion_manager = IntrusionManager()
+
     # Register core handlers
     db_handler = DBHandler()
     video_handler = VideoRecorderHandler(fps=FPS)
@@ -62,7 +66,7 @@ def main():
     user_repo = UserRepository()
     notification_service = NotificationService(user_repo)
 
-    # SMTP provider (default / fallback)
+    # SMTP provider
     email_provider = SMTPProvider(
         SMTP_HOST,
         SMTP_PORT,
@@ -71,37 +75,30 @@ def main():
         SMTP_USE_SSL
     )
 
-    # Production alternative (example)
-    # email_provider = SendGridProvider(
-    #     SENDGRID_API_KEY,
-    #     "alerts@yourdomain.com"
-    # )
-
+    # Mail handler now receives intrusion_manager
     mail_handler = MailHandler(
         email_provider,
         notification_service,
+        intrusion_manager,
         MAIL_COOLDOWN
     )
 
     event_bus.register(mail_handler)
 
-    # Initialize GSM if enabled
+    # Initialize GSM modem
 
     print("[MAIN] Initializing GSM modem")
 
-    gsm_client = GSMClient(
-        GSM_PORT,
-        GSM_BAUDRATE
-    )
-
+    gsm_client = GSMClient(GSM_PORT)
     gsm_client.connect()
 
-    user_repo = UserRepository()
     sms_service = SMSService(user_repo)
 
+    # GSM handler now receives intrusion_manager
     gsm_handler = GSMHandler(
         gsm_client,
         sms_service,
+        intrusion_manager,
         GSM_COOLDOWN
     )
 
@@ -171,6 +168,9 @@ def main():
     # Main processing loop
     try:
         while running:
+
+            # NEW: check if intrusion should reset
+            intrusion_manager.should_reset()
 
             for cam_id, data in cameras.items():
 

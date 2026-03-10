@@ -8,9 +8,10 @@ import time
 class EventType(Enum):
     PRESENCE_START = auto()
     PRESENCE_END = auto()
-    PRESENCE_UPDATE = auto()
+    SNAPSHOT_TIMER = auto()
     SNAPSHOT_SAVED = auto()
     SYSTEM_ERROR = auto()
+
 
 # BASE EVENT
 @dataclass
@@ -19,7 +20,9 @@ class Event:
     source: str
     timestamp: float = field(default_factory=time.time)
 
-# SPECIFIC EVENTS
+
+# ================= PRESENCE START =================
+
 @dataclass(init=False)
 class PresenceStartEvent(Event):
     cam_id: int
@@ -36,19 +39,23 @@ class PresenceStartEvent(Event):
         self.frame = frame
 
 
+# ================= SNAPSHOT TIMER =================
+
 @dataclass(init=False)
-class PresenceUpdateEvent(Event):
+class SnapshotTimerEvent(Event):
     cam_id: int
     frame: any = None
 
     def __init__(self, cam_id: int, frame=None):
         super().__init__(
-            type=EventType.PRESENCE_UPDATE,
+            type=EventType.SNAPSHOT_TIMER,
             source=f"camera_{cam_id}"
         )
         self.cam_id = cam_id
         self.frame = frame
 
+
+# ================= PRESENCE END =================
 
 @dataclass(init=False)
 class PresenceEndEvent(Event):
@@ -66,6 +73,8 @@ class PresenceEndEvent(Event):
         self.snapshot_path = snapshot_path
 
 
+# ================= SNAPSHOT SAVED =================
+
 @dataclass(init=False)
 class SnapshotSavedEvent(Event):
     cam_id: int
@@ -81,7 +90,9 @@ class SnapshotSavedEvent(Event):
         self.camera_name = camera_name
         self.snapshot_path = snapshot_path
 
-# EVENT BUS
+
+# ================= EVENT BUS =================
+
 class EventBus:
 
     def __init__(self):
@@ -100,7 +111,10 @@ class EventBus:
             f"Time: {event.timestamp}"
         )
 
-        for handler in self._handlers:
+        with self._lock:
+            handlers = list(self._handlers)
+
+        for handler in handlers:
             try:
                 handler.handle(event)
             except Exception as e:

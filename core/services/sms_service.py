@@ -5,12 +5,8 @@ class SMSService:
 
     def get_numbers_for_camera(self, camera_id):
 
-        users = self.user_repository.get_users_for_camera(camera_id)
-
-        numbers = []
-
-        for user in users:
-            if user.phone_number:
-                numbers.append(user.phone_number)
-
+        numbers = self.user_repository.get_notification_phones(camera_id)
+        
+        print(f"[SMS] Numbers for camera {camera_id}: {numbers}")
+        
         return numbers

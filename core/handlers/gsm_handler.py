@@ -4,16 +4,17 @@ import threading
 
 from core.events import EventType
 
+
 class GSMHandler:
 
-    def __init__(self, gsm_client, sms_service, cooldown=60):
+    def __init__(self, gsm_client, sms_service, intrusion_manager, cooldown=60):
 
         self.gsm_client = gsm_client
         self.sms_service = sms_service
+        self.intrusion_manager = intrusion_manager
         self.cooldown = cooldown
 
         self.queue = queue.Queue()
-        self.last_sent = {}
 
         self.worker = threading.Thread(
             target=self._worker_loop,
@@ -21,9 +22,18 @@ class GSMHandler:
         )
         self.worker.start()
 
+
     def handle(self, event):
 
+        print("[GSM] Handler received event:", event.type)
+
         if event.type != EventType.PRESENCE_START:
+            return
+
+        # IntrusionManager decyduje czy wysłać SMS
+        should_notify = self.intrusion_manager.handle_presence_start(event.cam_id)
+
+        if not should_notify:
             return
 
         numbers = self.sms_service.get_numbers_for_camera(event.cam_id)
@@ -32,18 +42,11 @@ class GSMHandler:
             print("[GSM] No phone numbers configured")
             return
 
-        now = time.time()
-        last = self.last_sent.get(event.cam_id, 0)
-
-        if now - last < self.cooldown:
-            return
-
-        self.last_sent[event.cam_id] = now
-
         self.queue.put({
             "numbers": numbers,
             "camera_name": event.camera_name
         })
+
 
     def _worker_loop(self):
 
@@ -59,6 +62,7 @@ class GSMHandler:
 
             finally:
                 self.queue.task_done()
+
 
     def _send_sms(self, task):
 

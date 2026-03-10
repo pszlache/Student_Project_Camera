@@ -1,169 +1,153 @@
-import serial
+import os
+import termios
 import time
 
 
 class GSMClient:
 
-    def __init__(self, port, baudrate):
+    def __init__(self, port):
 
         self.port = port
-        self.baudrate = baudrate
-        self.ser = None
-
+        self.fd = None
         self.connected = False
+
 
     # ================= CONNECT =================
 
     def connect(self):
 
-        print(f"[GSM] Opening serial {self.port}")
+        print(f"[GSM] Opening modem {self.port}")
+
+        self.fd = os.open(self.port, os.O_RDWR | os.O_NOCTTY)
+
+        attrs = termios.tcgetattr(self.fd)
+
+        attrs[4] = termios.B115200
+        attrs[5] = termios.B115200
+
+        attrs[2] |= termios.CLOCAL | termios.CREAD
+
+        termios.tcsetattr(self.fd, termios.TCSANOW, attrs)
+
+        time.sleep(2)
+
+        self.connected = True
+
+        self._init_sms()
+
+
+    # ================= READ =================
+
+    def _read(self):
+
+        data = b""
 
         try:
-
-            self.ser = serial.Serial(
-                port=self.port,
-                baudrate=self.baudrate,
-                timeout=1,
-                rtscts=False,
-                dsrdtr=True,
-                write_timeout=2
-            )
-
-            time.sleep(2)
-
-            self.ser.reset_input_buffer()
-            self.ser.reset_output_buffer()
-
-            for _ in range(5):
-
-                resp = self._send_command("AT")
-
-                if "OK" in resp:
-                    self.connected = True
-                    print("[GSM] Modem ready")
+            while True:
+                chunk = os.read(self.fd, 1024)
+                if not chunk:
                     break
+                data += chunk
+        except BlockingIOError:
+            pass
 
-                time.sleep(1)
+        return data.decode(errors="ignore")
 
-            if not self.connected:
-                raise Exception("GSM modem not responding")
-
-            # SMS init
-            self._send_command("AT+CMEE=2")
-            self._send_command("AT+CSMS=1")
-            self._send_command("AT+CMGF=1")
-            self._send_command('AT+CSCS="GSM"')
-
-            print("[GSM] SMS service initialized")
-
-        except Exception as e:
-
-            print("[GSM] Connect error:", e)
-            self.connected = False
-            raise
 
     # ================= COMMAND =================
 
-    def _send_command(self, command, delay=0.5):
+    def _send_command(self, cmd, delay=1):
 
-        if not self.ser:
-            raise Exception("Serial not open")
+        print(">>>", cmd)
 
-        self.ser.write((command + "\r").encode())
+        os.write(self.fd, (cmd + "\r").encode())
 
         time.sleep(delay)
 
-        response = ""
+        resp = self._read()
 
-        while self.ser.in_waiting:
-            response += self.ser.read(self.ser.in_waiting).decode(errors="ignore")
+        print(resp)
 
-        return response
+        return resp
 
-    # ================= NETWORK =================
 
-    def check_network(self):
+    # ================= INIT SMS =================
 
-        resp = self._send_command("AT+CEREG?")
+    def _init_sms(self):
 
-        if ",1" in resp or ",5" in resp:
-            return True
+        self._send_command("AT")
+        self._send_command("AT+CMEE=2")
+        self._send_command("AT+CSMS=1")
+        self._send_command("AT+CMGF=1")
+        self._send_command('AT+CSCS="GSM"')
 
-        return False
+        print("[GSM] SMS initialized")
 
-    # ================= SEND SMS =================
 
-    def send_sms(self, number, message, retries=3):
+    # ================= WAIT PROMPT =================
 
-        for attempt in range(retries):
+    def _wait_prompt(self, timeout=10):
+
+        buffer = ""
+        start = time.time()
+
+        while True:
+
+            if time.time() - start > timeout:
+                raise Exception("No SMS prompt")
 
             try:
 
-                if not self.connected:
-                    print("[GSM] Reconnecting modem")
-                    self.connect()
+                data = os.read(self.fd, 1024).decode(errors="ignore")
 
-                if not self.check_network():
-                    raise Exception("Modem not registered in network")
+                if data:
+                    buffer += data
 
-                print(f"[GSM] Sending SMS to {number}")
+                    if ">" in buffer:
+                        return
 
-                # start SMS
-                self.ser.write(f'AT+CMGS="{number}"\r'.encode())
+            except BlockingIOError:
+                pass
 
-                buffer = ""
-                start = time.time()
+            time.sleep(0.1)
 
-                while ">" not in buffer:
 
-                    if time.time() - start > 5:
-                        raise TimeoutError("No '>' prompt")
+    # ================= SEND SMS =================
 
-                    if self.ser.in_waiting:
-                        buffer += self.ser.read(self.ser.in_waiting).decode(errors="ignore")
+    def send_sms(self, number, message):
 
-                # message
-                self.ser.write(message.encode())
+        if not self.connected:
+            raise Exception("GSM not connected")
 
-                time.sleep(0.2)
+        print(f"[GSM] Sending SMS to {number}")
 
-                # CTRL+Z
-                self.ser.write(b"\x1A")
+        os.write(self.fd, f'AT+CMGS="{number}"\r'.encode())
 
-                time.sleep(4)
+        self._wait_prompt()
 
-                response = ""
+        os.write(self.fd, message.encode())
 
-                while self.ser.in_waiting:
-                    response += self.ser.read(self.ser.in_waiting).decode(errors="ignore")
+        time.sleep(0.2)
 
-                print("[GSM] Response:", response)
+        os.write(self.fd, b"\x1A")
 
-                if "OK" in response or "+CMGS" in response:
-                    return True
+        time.sleep(5)
 
-                raise Exception("SMS send failed")
+        resp = self._read()
 
-            except Exception as e:
+        print("[GSM] Response:", resp)
 
-                print(f"[GSM] SMS attempt {attempt+1} failed:", e)
+        return resp
 
-                self.connected = False
-
-                time.sleep(2)
-
-        print("[GSM] SMS sending failed after retries")
-
-        return False
 
     # ================= CLOSE =================
 
     def close(self):
 
-        if self.ser:
+        if self.fd:
 
             print("[GSM] Closing modem")
 
-            self.ser.close()
+            os.close(self.fd)
 
             self.connected = False
