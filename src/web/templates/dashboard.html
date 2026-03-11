@@ -1,60 +1,70 @@
 {% extends "base.html" %}
 {% block content %}
 
-<h1>Dashboard</h1>
+<div class="dashboard-layout">
 
-<!-- LIVE EVENTS -->
-<div class="live-events-panel">
+    <!-- LEFT SIDE (CAMERAS) -->
+    <div class="dashboard-main">
 
-    <h3>Live Events</h3>
+        <h1>Dashboard</h1>
 
-    <div id="live-events"></div>
+        <div class="camera-grid">
 
-</div>
+            {% for cam in cameras %}
+            <div class="camera-card"
+                 onclick="window.location='/camera/{{ cam.id }}'">
 
-<div class="camera-grid">
+                <div class="camera-header">
+                    <h3>Camera {{ cam.id }}</h3>
 
-    {% for cam in cameras %}
-    <div class="camera-card"
-         onclick="window.location='/camera/{{ cam.id }}'">
+                    {% if cam.presence %}
+                        <span class="badge active">Presence</span>
+                    {% else %}
+                        <span class="badge idle">Idle</span>
+                    {% endif %}
+                </div>
 
-        <div class="camera-header">
-            <h3>Camera {{ cam.id }}</h3>
+                <div class="camera-preview">
+                    <img
+                        src="{{ url_for('video', cam_id=cam.id) }}"
+                        loading="lazy"
+                        alt="Camera {{ cam.id }}"
+                        onerror="this.src='/static/img/camera_offline.png'"
+                    >
+                </div>
 
-            {% if cam.presence %}
-                <span class="badge active">Presence</span>
-            {% else %}
-                <span class="badge idle">Idle</span>
-            {% endif %}
-        </div>
+                <div class="camera-actions">
 
-        <div class="camera-preview">
-            <img
-                src="{{ url_for('video', cam_id=cam.id) }}"
-                loading="lazy"
-                alt="Camera {{ cam.id }}"
-                onerror="this.src='/static/img/camera_offline.png'"
-            >
-        </div>
+                    <a href="/records/{{ cam.id }}"
+                       class="secondary"
+                       onclick="event.stopPropagation();">
+                        Records
+                    </a>
 
-        <div class="camera-actions">
+                    <a href="/snapshots/{{ cam.id }}"
+                       class="secondary"
+                       onclick="event.stopPropagation();">
+                        Snapshots
+                    </a>
 
-            <a href="/records/{{ cam.id }}"
-               class="secondary"
-               onclick="event.stopPropagation();">
-                Records
-            </a>
+                </div>
 
-            <a href="/snapshots/{{ cam.id }}"
-               class="secondary"
-               onclick="event.stopPropagation();">
-                Snapshots
-            </a>
+            </div>
+            {% endfor %}
 
         </div>
 
     </div>
-    {% endfor %}
+
+
+    <!-- RIGHT SIDE (EVENT LOG) -->
+    <div class="live-events-panel">
+
+        <h3>Active Events</h3>
+
+        <div id="live-events"></div>
+
+    </div>
 
 </div>
 

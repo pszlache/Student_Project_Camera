@@ -14,3 +14,4 @@ Pygments==2.19.2
 pyserial==3.5
 pytest==9.0.2
 Werkzeug==3.1.5
+psutil==6.0.0

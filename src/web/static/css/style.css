@@ -450,3 +450,54 @@ body {
     margin-bottom: 6px;
     font-size: 13px;
 }
+
+/* ================= DASHBOARD LAYOUT ================= */
+
+.dashboard-layout {
+    display: flex;
+    gap: 20px;
+}
+
+/* LEFT SIDE */
+
+.dashboard-main {
+    flex: 1;
+}
+
+/* RIGHT SIDE EVENT LOG */
+
+.live-events-panel {
+
+    width: 280px;
+
+    background: #1f2937;
+
+    border-radius: 12px;
+
+    padding: 12px;
+
+    position: sticky;
+
+    top: 20px;
+
+    height: fit-content;
+}
+
+
+/* EVENTS */
+
+.live-event {
+
+    background: #111827;
+
+    padding: 6px 10px;
+
+    border-left: 4px solid #ef4444;
+
+    border-radius: 6px;
+
+    margin-bottom: 6px;
+
+    font-size: 13px;
+
+}

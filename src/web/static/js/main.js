@@ -178,7 +178,7 @@ function showLiveEvent(data) {
     //LIMIT EVENTS
     const events = container.children;
 
-    if (events.length > 10) {
+    if (events.length > 5) {
         container.removeChild(events[events.length - 1]);
     }
 

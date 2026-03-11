@@ -10,7 +10,8 @@ dependencies = [
     "numpy==2.4.2",
     "opencv-python==4.13.0.92",
     "pyserial==3.5",
-    "bcrypt==5.0.0"
+    "bcrypt==5.0.0",
+    "psutil==6.0.0"
 ]
 
 [project.optional-dependencies]

@@ -13,7 +13,39 @@
             <h3>Cameras</h3>
             <div class="status-line">
                 <span class="dot ok"></span>
-                {{ cameras_count or "?" }} active
+                {{ cameras_count }} active
+            </div>
+        </div>
+
+        <!-- CPU -->
+        <div class="system-card">
+            <h3>CPU</h3>
+            <div class="status-line">
+                {{ cpu_usage }} %
+            </div>
+        </div>
+
+        <!-- RAM -->
+        <div class="system-card">
+            <h3>RAM</h3>
+            <div class="status-line">
+                {{ ram_usage }} %
+            </div>
+        </div>
+
+        <!-- DISK -->
+        <div class="system-card">
+            <h3>Disk</h3>
+            <div class="status-line">
+                {{ disk_usage }} %
+            </div>
+        </div>
+
+        <!-- UPTIME -->
+        <div class="system-card">
+            <h3>Uptime</h3>
+            <div class="status-line">
+                {{ uptime }}
             </div>
         </div>
 
@@ -32,22 +64,6 @@
             <div class="status-line">
                 <span class="dot warn"></span>
                 Pending
-            </div>
-        </div>
-
-        <!-- DISK -->
-        <div class="system-card">
-            <h3>Disk</h3>
-            <div class="status-line">
-                {{ disk_usage or "?" }}
-            </div>
-        </div>
-
-        <!-- UPTIME -->
-        <div class="system-card">
-            <h3>Uptime</h3>
-            <div class="status-line">
-                {{ uptime or "?" }}
             </div>
         </div>
 

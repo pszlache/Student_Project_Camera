@@ -8,6 +8,7 @@
 
 <!-- SYSTEM CONTROL -->
 <h2>System control</h2>
+
 <form method="post" action="/admin/cameras/stop">
     <button class="danger" type="submit">Stop cameras</button>
 </form>
@@ -15,6 +16,29 @@
 <form method="post" action="/admin/cameras/start">
     <button class="success" type="submit">Start cameras</button>
 </form>
+
+
+<!-- MAIL CONFIGURATION -->
+<div class="admin-card">
+
+<h3>Mail configuration</h3>
+
+<form method="post" action="/admin/mail_config" class="admin-form">
+
+    <input name="smtp_host" placeholder="SMTP host (e.g. smtp.gmail.com)" required>
+
+    <input name="smtp_port" placeholder="Port (e.g. 587)" required>
+
+    <input name="smtp_username" placeholder="Sender email" required>
+
+    <input type="password" name="smtp_password" placeholder="App password">
+
+    <button type="submit">Update mail config</button>
+
+</form>
+
+</div>
+
 
 <!-- CREATE USER -->
 <div class="admin-card">

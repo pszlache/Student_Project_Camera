@@ -2,6 +2,7 @@ import threading
 import queue
 
 from core.events import EventType
+from core.services.runtime_config import RuntimeConfig
 
 
 class MailHandler:
@@ -80,6 +81,22 @@ class MailHandler:
 
     #SEND MAIL
     def _send_email(self, task):
+
+        #CHECK RUNTIME CONFIG
+        cfg = RuntimeConfig.get_mail_config()
+
+        if cfg["host"]:
+            self.email_provider.host = cfg["host"]
+
+        if cfg["port"]:
+            self.email_provider.port = cfg["port"]
+
+        if cfg["username"]:
+            self.email_provider.username = cfg["username"]
+
+        if cfg["password"]:
+            self.email_provider.password = cfg["password"]
+
 
         subject = f"ALERT: Presence detected on camera {task['camera_name']}"
 

@@ -17,6 +17,7 @@ from core.services.auth_service import AuthService
 from core.repositories.user_repository import UserRepository
 from logs.db import _get_connection
 from core.services.system_state import SystemState
+from core.services.runtime_config import RuntimeConfig
 
 import sqlite3
 import cv2
@@ -24,8 +25,10 @@ import threading
 import time
 import os
 import glob
+import json
 
 from datetime import timedelta
+
 
 #FLASK INIT
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -39,6 +42,7 @@ app = Flask(
 
 app.secret_key = os.getenv("SECRET_KEY", "dev_secret")
 
+
 #SESSION SECURITY
 app.config["SESSION_COOKIE_HTTPONLY"] = True
 app.config["SESSION_COOKIE_SECURE"] = False
@@ -51,6 +55,7 @@ auth_service = AuthService()
 user_repo = UserRepository()
 
 shared_cameras = {}
+
 
 #AUTH DECORATORS
 def login_required(f):
@@ -74,10 +79,12 @@ def role_required(role):
         return decorated_function
     return wrapper
 
+
 #CAMERA SHARING
 def set_shared_cameras(cameras):
     global shared_cameras
     shared_cameras = cameras
+
 
 #STREAM
 def generate_frames(cam_id):
@@ -89,7 +96,6 @@ def generate_frames(cam_id):
             time.sleep(0.1)
             continue
 
-        #SYSTEM STATE CHECK
         if not SystemState.cameras_enabled:
             time.sleep(0.1)
             continue
@@ -125,24 +131,52 @@ def generate_frames(cam_id):
 
         time.sleep(0.05)
 
+
 #STATUS API
 @app.route("/api/status")
 @login_required
 def api_status():
+
     cameras_online = len(shared_cameras)
 
     return jsonify({
         "ai": True,
         "gsm": True,
-        "cameras": cameras_online > 0
+        "cameras": cameras_online
     })
+
+
+#MAIL CONFIG (ADMIN)
+@app.route("/admin/mail_config", methods=["POST"])
+@login_required
+@role_required("admin")
+def update_mail_config():
+
+    host = request.form.get("smtp_host")
+    port = request.form.get("smtp_port")
+    username = request.form.get("smtp_username")
+    password = request.form.get("smtp_password")
+
+    RuntimeConfig.update_mail(
+        host,
+        int(port),
+        username,
+        password
+    )
+
+    print("[ADMIN] SMTP configuration updated")
+
+    return redirect(url_for("admin_panel"))
+
 
 #AUTH
 @app.route("/login", methods=["GET", "POST"])
 def login():
+
     error = None
 
     if request.method == "POST":
+
         email = request.form.get("email")
         password = request.form.get("password")
 
@@ -153,8 +187,10 @@ def login():
         )
 
         if user:
+
             session["user"] = user
             session.permanent = True
+
             return redirect(url_for("index"))
 
         error = "Invalid credentials"
@@ -165,8 +201,11 @@ def login():
 @app.route("/logout")
 @login_required
 def logout():
+
     session.clear()
+
     return redirect(url_for("login"))
+
 
 #DASHBOARD
 @app.route("/")
@@ -183,6 +222,7 @@ def index():
     cameras_data = []
 
     for cam_id in visible_cameras:
+
         if cam_id not in shared_cameras:
             continue
 
@@ -193,7 +233,11 @@ def index():
             "presence": presence
         })
 
-    return render_template("dashboard.html", cameras=cameras_data)
+    return render_template(
+        "dashboard.html",
+        cameras=cameras_data
+    )
+
 
 #CAMERA DETAIL
 @app.route("/camera/<int:cam_id>")
@@ -216,209 +260,8 @@ def camera_detail(cam_id):
         presence=presence
     )
 
-#RECORDS
-@app.route("/records/<int:cam_id>")
-@login_required
-def records_page(cam_id):
 
-    base_path = os.path.join("recordings", f"cam_{cam_id}")
-    pattern = os.path.join(base_path, "*.mp4")
-    files = sorted(glob.glob(pattern), reverse=True)
-
-    recordings = [os.path.basename(f) for f in files]
-
-    return render_template(
-        "records.html",
-        cam_id=cam_id,
-        recordings=recordings
-    )
-
-#SNAPSHOTS
-@app.route("/snapshots/<int:cam_id>")
-@login_required
-def snapshots_page(cam_id):
-
-    base_path = os.path.join("snapshots", f"cam_{cam_id}")
-    pattern = os.path.join(base_path, "*.jpg")
-    files = sorted(glob.glob(pattern), reverse=True)
-
-    snapshots = [os.path.basename(f) for f in files]
-
-    return render_template(
-        "snapshots.html",
-        cam_id=cam_id,
-        snapshots=snapshots
-    )
-
-#SERVE MEDIA
-@app.route("/media/recordings/<int:cam_id>/<path:filename>")
-@login_required
-def serve_recording(cam_id, filename):
-
-    directory = os.path.join("recordings", f"cam_{cam_id}")
-    return send_from_directory(directory, filename)
-
-
-@app.route("/media/snapshots/<int:cam_id>/<path:filename>")
-@login_required
-def serve_snapshot(cam_id, filename):
-
-    directory = os.path.join("snapshots", f"cam_{cam_id}")
-    return send_from_directory(directory, filename)
-
-#EVENTS
-@app.route("/events")
-@login_required
-def events_page():
-
-    conn = _get_connection()
-    conn.row_factory = sqlite3.Row
-    cursor = conn.cursor()
-
-    cursor.execute("""
-        SELECT camera_name, start_time, end_time
-        FROM presence_events
-        ORDER BY id DESC
-        LIMIT 50
-    """)
-
-    rows = cursor.fetchall()
-    conn.close()
-
-    events = []
-
-    for row in rows:
-        start = row["start_time"]
-        end = row["end_time"]
-
-        duration = None
-        if start and end:
-            duration = "—"
-
-        events.append({
-            "camera_id": row["camera_name"],
-            "start_time": start,
-            "end_time": end,
-            "duration": None
-        })
-
-    return render_template("events.html", events=events)
-
-#SYSTEM
-@app.route("/system")
-@login_required
-def system_page():
-    return render_template(
-        "system.html",
-        cameras_count=len(shared_cameras),
-        disk_usage="—",
-        version="1.0"
-    )
-
-#ADMIN
-@app.route("/admin", methods=["GET", "POST"])
-@login_required
-@role_required("admin")
-def admin_panel():
-
-    if request.method == "POST":
-
-        action = request.form.get("action")
-
-        #CREATE USER
-        if action == "create_user":
-
-            email = request.form.get("email")
-            phone = request.form.get("phone")
-            password = request.form.get("password")
-            role = request.form.get("role")
-
-            print(f"[ADMIN] Create user: {email} | phone={phone}")
-
-            if email and password:
-                auth_service.create_user(email, password, role, phone)
-
-        #DELETE USER
-        elif action == "delete_user":
-
-            user_id = int(request.form.get("user_id"))
-
-            if session["user"]["id"] != user_id:
-                user_repo.delete_user_by_id(user_id)
-
-        #ASSIGN CAMERA
-        elif action == "assign_camera":
-
-            user_id = int(request.form.get("user_id"))
-            camera_id_raw = request.form.get("camera_id")
-
-            print(f"[ADMIN] Assign camera request: user={user_id}, camera={camera_id_raw}")
-
-            if camera_id_raw == "":
-                user_repo.remove_all_cameras(user_id)
-                print(f"[ADMIN] Removed all cameras from user {user_id}")
-
-            else:
-                camera_id = int(camera_id_raw)
-
-                user_repo.remove_all_cameras(user_id)
-                user_repo.assign_camera(user_id, camera_id)
-
-                print(f"[ADMIN] Assigned camera {camera_id} to user {user_id}")
-
-        #REMOVE CAMERA
-        elif action == "remove_camera":
-
-            user_id = int(request.form.get("user_id"))
-            camera_id = int(request.form.get("camera_id"))
-
-            user_repo.remove_camera(user_id, camera_id)
-
-        #TOGGLE NOTIFICATIONS
-        elif action == "toggle_notifications":
-
-            user_id = int(request.form.get("user_id"))
-            enabled = int(request.form.get("enabled"))
-
-            if enabled:
-                user_repo.enable_notifications(user_id)
-            else:
-                user_repo.disable_notifications(user_id)
-
-    users = user_repo.get_all_users()
-    login_logs = user_repo.get_login_logs(50)
-
-    return render_template(
-        "admin.html",
-        users=users,
-        login_logs=login_logs
-    )
-
-#CAMERA CONTROL
-@app.route("/admin/cameras/stop", methods=["POST"])
-@login_required
-@role_required("admin")
-def stop_cameras():
-
-    SystemState.cameras_enabled = False
-
-    print("[ADMIN] Cameras stopped")
-
-    return redirect(url_for("admin_panel"))
-
-
-@app.route("/admin/cameras/start", methods=["POST"])
-@login_required
-@role_required("admin")
-def start_cameras():
-
-    SystemState.cameras_enabled = True
-
-    print("[ADMIN] Cameras started")
-
-    return redirect(url_for("admin_panel"))
-
-#VIDEO
+#VIDEO STREAM
 @app.route("/video/<int:cam_id>")
 @login_required
 def video(cam_id):
@@ -435,6 +278,7 @@ def video(cam_id):
         stream_with_context(generate_frames(cam_id)),
         mimetype="multipart/x-mixed-replace; boundary=frame"
     )
+
 
 #LIVE EVENTS (SSE)
 @app.route("/api/events")
@@ -459,6 +303,7 @@ def live_events():
             """)
 
             row = cursor.fetchone()
+
             conn.close()
 
             if row:
@@ -469,10 +314,10 @@ def live_events():
 
                     last_event_id = event_id
 
-                    payload = {
+                    payload = json.dumps({
                         "camera": row["camera_name"],
                         "time": row["start_time"]
-                    }
+                    })
 
                     yield f"data: {payload}\n\n"
 
@@ -483,8 +328,38 @@ def live_events():
         mimetype="text/event-stream"
     )
 
+#SYSTEM
+@app.route("/system")
+@login_required
+def system_page():
+
+    import psutil
+    import shutil
+
+    cpu_usage = psutil.cpu_percent(interval=0.2)
+
+    ram = psutil.virtual_memory()
+    ram_usage = ram.percent
+
+    disk = shutil.disk_usage("/")
+    disk_usage = round((disk.used / disk.total) * 100)
+
+    uptime_seconds = time.time() - psutil.boot_time()
+
+    uptime = str(timedelta(seconds=int(uptime_seconds)))
+
+    return render_template(
+        "system.html",
+        cameras_count=len(shared_cameras),
+        cpu_usage=cpu_usage,
+        ram_usage=ram_usage,
+        disk_usage=disk_usage,
+        uptime=uptime
+    )
+
 #START
 def start_stream():
+
     threading.Thread(
         target=lambda: app.run(
             host="0.0.0.0",
