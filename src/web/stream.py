@@ -238,6 +238,80 @@ def index():
         cameras=cameras_data
     )
 
+#ADMIN
+@app.route("/admin", methods=["GET", "POST"])
+@login_required
+@role_required("admin")
+def admin_panel():
+
+    if request.method == "POST":
+
+        action = request.form.get("action")
+
+        #CREATE USER
+        if action == "create_user":
+
+            email = request.form.get("email")
+            phone = request.form.get("phone")
+            password = request.form.get("password")
+            role = request.form.get("role")
+
+            print(f"[ADMIN] Create user: {email}")
+
+            if email and password:
+                auth_service.create_user(email, password, role, phone)
+
+        #DELETE USER
+        elif action == "delete_user":
+
+            user_id = int(request.form.get("user_id"))
+
+            if session["user"]["id"] != user_id:
+                user_repo.delete_user_by_id(user_id)
+
+        #ASSIGN CAMERA
+        elif action == "assign_camera":
+
+            user_id = int(request.form.get("user_id"))
+            camera_id_raw = request.form.get("camera_id")
+
+            if camera_id_raw == "":
+                user_repo.remove_all_cameras(user_id)
+
+            else:
+
+                camera_id = int(camera_id_raw)
+
+                user_repo.remove_all_cameras(user_id)
+                user_repo.assign_camera(user_id, camera_id)
+
+        #REMOVE CAMERA
+        elif action == "remove_camera":
+
+            user_id = int(request.form.get("user_id"))
+            camera_id = int(request.form.get("camera_id"))
+
+            user_repo.remove_camera(user_id, camera_id)
+
+        #TOGGLE NOTIFICATIONS
+        elif action == "toggle_notifications":
+
+            user_id = int(request.form.get("user_id"))
+            enabled = int(request.form.get("enabled"))
+
+            if enabled:
+                user_repo.enable_notifications(user_id)
+            else:
+                user_repo.disable_notifications(user_id)
+
+    users = user_repo.get_all_users()
+    login_logs = user_repo.get_login_logs(50)
+
+    return render_template(
+        "admin.html",
+        users=users,
+        login_logs=login_logs
+    )
 
 #CAMERA DETAIL
 @app.route("/camera/<int:cam_id>")
@@ -326,6 +400,41 @@ def live_events():
     return Response(
         stream_with_context(event_stream()),
         mimetype="text/event-stream"
+    )
+
+#EVENTS
+@app.route("/events")
+@login_required
+def events_page():
+
+    conn = _get_connection()
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT camera_name, start_time, end_time
+        FROM presence_events
+        ORDER BY id DESC
+        LIMIT 50
+    """)
+
+    rows = cursor.fetchall()
+
+    conn.close()
+
+    events = []
+
+    for row in rows:
+
+        events.append({
+            "camera_id": row["camera_name"],
+            "start_time": row["start_time"],
+            "end_time": row["end_time"]
+        })
+
+    return render_template(
+        "events.html",
+        events=events
     )
 
 #SYSTEM
