@@ -10,11 +10,14 @@ class UserRepository:
         conn.row_factory = sqlite3.Row
         return conn
 
+
     #USER READ
     def get_all_users(self):
+
         conn = self._get_connection()
 
         try:
+
             cursor = conn.cursor()
 
             cursor.execute("""
@@ -32,11 +35,13 @@ class UserRepository:
         finally:
             conn.close()
 
+
     def get_user_by_id(self, user_id):
 
         conn = self._get_connection()
 
         try:
+
             cursor = conn.cursor()
 
             cursor.execute("""
@@ -58,11 +63,13 @@ class UserRepository:
         finally:
             conn.close()
 
+
     def get_user_by_email(self, email):
 
         conn = self._get_connection()
 
         try:
+
             cursor = conn.cursor()
 
             cursor.execute("""
@@ -84,12 +91,14 @@ class UserRepository:
         finally:
             conn.close()
 
+
     #USER MANAGEMENT
     def delete_user_by_id(self, user_id):
 
         conn = self._get_connection()
 
         try:
+
             cursor = conn.cursor()
 
             cursor.execute("""
@@ -109,6 +118,7 @@ class UserRepository:
         finally:
             conn.close()
 
+
     #CAMERA PERMISSIONS
     def assign_camera(self, user_id, camera_id):
 
@@ -118,6 +128,7 @@ class UserRepository:
         conn = self._get_connection()
 
         try:
+
             cursor = conn.cursor()
 
             cursor.execute("""
@@ -130,11 +141,13 @@ class UserRepository:
         finally:
             conn.close()
 
+
     def remove_camera(self, user_id, camera_id):
 
         conn = self._get_connection()
 
         try:
+
             cursor = conn.cursor()
 
             cursor.execute("""
@@ -147,11 +160,13 @@ class UserRepository:
         finally:
             conn.close()
 
+
     def remove_all_cameras(self, user_id):
 
         conn = self._get_connection()
 
         try:
+
             cursor = conn.cursor()
 
             cursor.execute("""
@@ -164,11 +179,13 @@ class UserRepository:
         finally:
             conn.close()
 
+
     def get_user_cameras(self, user_id):
 
         conn = self._get_connection()
 
         try:
+
             cursor = conn.cursor()
 
             cursor.execute("""
@@ -182,11 +199,13 @@ class UserRepository:
         finally:
             conn.close()
 
+
     def user_has_access_to_camera(self, user_id, camera_id):
 
         conn = self._get_connection()
 
         try:
+
             cursor = conn.cursor()
 
             cursor.execute("""
@@ -214,12 +233,34 @@ class UserRepository:
         finally:
             conn.close()
 
+
+    #CAMERAS
+    def get_all_cameras(self):
+
+        conn = self._get_connection()
+
+        try:
+
+            cursor = conn.cursor()
+
+            cursor.execute("""
+                SELECT DISTINCT camera_id
+                FROM user_cameras
+            """)
+
+            return [row["camera_id"] for row in cursor.fetchall()]
+
+        finally:
+            conn.close()
+
+
     #NOTIFICATIONS
     def get_notification_emails(self, camera_id):
 
         conn = self._get_connection()
 
         try:
+
             cursor = conn.cursor()
 
             cursor.execute("""
@@ -238,11 +279,13 @@ class UserRepository:
         finally:
             conn.close()
 
+
     def get_notification_phones(self, camera_id):
 
         conn = self._get_connection()
 
         try:
+
             cursor = conn.cursor()
 
             cursor.execute("""
@@ -263,11 +306,13 @@ class UserRepository:
         finally:
             conn.close()
 
+
     def enable_notifications(self, user_id):
 
         conn = self._get_connection()
 
         try:
+
             cursor = conn.cursor()
 
             cursor.execute("""
@@ -281,11 +326,13 @@ class UserRepository:
         finally:
             conn.close()
 
+
     def disable_notifications(self, user_id):
 
         conn = self._get_connection()
 
         try:
+
             cursor = conn.cursor()
 
             cursor.execute("""
@@ -299,12 +346,14 @@ class UserRepository:
         finally:
             conn.close()
 
+
     #LOGIN LOGS
     def log_login_attempt(self, email, ip_address, success):
 
         conn = self._get_connection()
 
         try:
+
             cursor = conn.cursor()
 
             cursor.execute("""
@@ -317,11 +366,13 @@ class UserRepository:
         finally:
             conn.close()
 
+
     def get_login_logs(self, limit=50):
 
         conn = self._get_connection()
 
         try:
+
             cursor = conn.cursor()
 
             cursor.execute("""
@@ -338,13 +389,14 @@ class UserRepository:
         finally:
             conn.close()
 
+
     #EVENTS
     def get_recent_events(self, limit=50):
 
-        conn = sqlite3.connect(db.DB_PATH)
-        conn.row_factory = sqlite3.Row
+        conn = self._get_connection()
 
         try:
+
             cursor = conn.cursor()
 
             cursor.execute("""
@@ -359,6 +411,7 @@ class UserRepository:
             events = []
 
             for row in rows:
+
                 events.append({
                     "camera_id": row["camera_name"],
                     "start_time": row["start_time"],

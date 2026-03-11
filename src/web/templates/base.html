@@ -1,11 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+
     <meta charset="UTF-8">
+
     <title>{{ title or "Presence Monitor" }}</title>
+
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+
 </head>
 
 <body>
@@ -16,63 +23,91 @@
 
     <!-- SIDEBAR -->
     <aside class="sidebar">
-        <div class="logo">Presence Monitor</div>
+
+        <div class="logo">
+            Presence Monitor
+        </div>
 
         <nav>
+
             <a href="/">Dashboard</a>
             <a href="/events">Events</a>
             <a href="/system">System</a>
 
             {% if session["user"]["role"] == "admin" %}
+
                 <div class="nav-section">Admin</div>
+
                 <a href="/admin">Admin panel</a>
+
             {% endif %}
+
         </nav>
+
     </aside>
 
     {% endif %}
 
+
     <div class="main">
 
         {% if session.get("user") %}
+
         <!-- TOPBAR -->
         <header class="topbar">
 
+            <!-- SYSTEM STATUS -->
             <div class="status">
+
                 <div class="status-item">
-                    <span id="dot-ai" class="dot"></span>
+                    <span id="dot-ai" class="dot idle"></span>
                     <span id="label-ai">AI</span>
                 </div>
 
                 <div class="status-item">
-                    <span id="dot-gsm" class="dot"></span>
+                    <span id="dot-gsm" class="dot idle"></span>
                     <span id="label-gsm">GSM</span>
                 </div>
 
                 <div class="status-item">
-                    <span id="dot-cameras" class="dot"></span>
+                    <span id="dot-cameras" class="dot idle"></span>
                     <span id="label-cameras">Cameras</span>
                 </div>
+
             </div>
 
+            <!-- USER -->
             <div class="user">
-                {{ session["user"]["email"] }}
+
+                <span class="user-email">
+                    {{ session["user"]["email"] }}
+                </span>
+
                 <a href="/logout">Logout</a>
+
             </div>
 
         </header>
+
         {% endif %}
+
 
         <!-- PAGE CONTENT -->
         <main class="content">
+
             {% block content %}{% endblock %}
+
         </main>
 
     </div>
 
 </div>
 
-<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+
+<!-- JS -->
+<script defer
+        src="{{ url_for('static', filename='js/main.js') }}">
+</script>
 
 </body>
 </html>

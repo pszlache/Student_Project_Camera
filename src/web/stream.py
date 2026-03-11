@@ -16,13 +16,15 @@ from web.logs import logs_bp
 from core.services.auth_service import AuthService
 from core.repositories.user_repository import UserRepository
 from logs.db import _get_connection
-import sqlite3
+from core.services.system_state import SystemState
 
+import sqlite3
 import cv2
 import threading
 import time
 import os
 import glob
+
 from datetime import timedelta
 
 #FLASK INIT
@@ -80,18 +82,30 @@ def set_shared_cameras(cameras):
 #STREAM
 def generate_frames(cam_id):
     while True:
+
         data = shared_cameras.get(cam_id)
+
         if data is None:
             time.sleep(0.1)
             continue
 
+        #SYSTEM STATE CHECK
+        if not SystemState.cameras_enabled:
+            time.sleep(0.1)
+            continue
+
         frame = data["camera"].read()
+
         if frame is None:
             time.sleep(0.01)
             continue
 
         presence_active = data["presence_service"].presence_active
-        overlay = draw_overlay(frame.copy(), presence_active)
+
+        overlay = draw_overlay(
+            frame.copy(),
+            presence_active
+        )
 
         ret, buffer = cv2.imencode(
             ".jpg",
@@ -104,9 +118,9 @@ def generate_frames(cam_id):
 
         yield (
             b"--frame\r\n"
-            b"Content-Type: image/jpeg\r\n\r\n" +
-            buffer.tobytes() +
-            b"\r\n"
+            b"Content-Type: image/jpeg\r\n\r\n"
+            + buffer.tobytes()
+            + b"\r\n"
         )
 
         time.sleep(0.05)
@@ -379,6 +393,31 @@ def admin_panel():
         users=users,
         login_logs=login_logs
     )
+
+#CAMERA CONTROL
+@app.route("/admin/cameras/stop", methods=["POST"])
+@login_required
+@role_required("admin")
+def stop_cameras():
+
+    SystemState.cameras_enabled = False
+
+    print("[ADMIN] Cameras stopped")
+
+    return redirect(url_for("admin_panel"))
+
+
+@app.route("/admin/cameras/start", methods=["POST"])
+@login_required
+@role_required("admin")
+def start_cameras():
+
+    SystemState.cameras_enabled = True
+
+    print("[ADMIN] Cameras started")
+
+    return redirect(url_for("admin_panel"))
+
 #VIDEO
 @app.route("/video/<int:cam_id>")
 @login_required
@@ -395,6 +434,53 @@ def video(cam_id):
     return Response(
         stream_with_context(generate_frames(cam_id)),
         mimetype="multipart/x-mixed-replace; boundary=frame"
+    )
+
+#LIVE EVENTS (SSE)
+@app.route("/api/events")
+@login_required
+def live_events():
+
+    def event_stream():
+
+        last_event_id = None
+
+        while True:
+
+            conn = _get_connection()
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+
+            cursor.execute("""
+                SELECT id, camera_name, start_time
+                FROM presence_events
+                ORDER BY id DESC
+                LIMIT 1
+            """)
+
+            row = cursor.fetchone()
+            conn.close()
+
+            if row:
+
+                event_id = row["id"]
+
+                if event_id != last_event_id:
+
+                    last_event_id = event_id
+
+                    payload = {
+                        "camera": row["camera_name"],
+                        "time": row["start_time"]
+                    }
+
+                    yield f"data: {payload}\n\n"
+
+            time.sleep(1)
+
+    return Response(
+        stream_with_context(event_stream()),
+        mimetype="text/event-stream"
     )
 
 #START

@@ -3,6 +3,15 @@
 
 <h1>Dashboard</h1>
 
+<!-- LIVE EVENTS -->
+<div class="live-events-panel">
+
+    <h3>Live Events</h3>
+
+    <div id="live-events"></div>
+
+</div>
+
 <div class="camera-grid">
 
     {% for cam in cameras %}
@@ -20,20 +29,28 @@
         </div>
 
         <div class="camera-preview">
-            <img src="{{ url_for('video', cam_id=cam.id) }}">
+            <img
+                src="{{ url_for('video', cam_id=cam.id) }}"
+                loading="lazy"
+                alt="Camera {{ cam.id }}"
+                onerror="this.src='/static/img/camera_offline.png'"
+            >
         </div>
 
         <div class="camera-actions">
+
             <a href="/records/{{ cam.id }}"
                class="secondary"
                onclick="event.stopPropagation();">
                 Records
             </a>
+
             <a href="/snapshots/{{ cam.id }}"
                class="secondary"
                onclick="event.stopPropagation();">
                 Snapshots
             </a>
+
         </div>
 
     </div>
