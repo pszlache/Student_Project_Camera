@@ -7,14 +7,13 @@ from core.events import EventType
 
 class GSMHandler:
 
-    def __init__(self, gsm_client, sms_service):
+    def __init__(self, gsm_client, sms_service, intrusion_manager):
 
         self.gsm_client = gsm_client
         self.sms_service = sms_service
+        self.intrusion_manager = intrusion_manager
 
         self.queue = queue.Queue()
-
-        self.last_sms = 0
 
         self.worker = threading.Thread(
             target=self._worker_loop,
@@ -30,7 +29,9 @@ class GSMHandler:
         if event.type != EventType.PRESENCE_START:
             return
 
-        if not self.sms_service.intrusion_manager.handle_presence_start(event.cam_id):
+        # GLOBAL ALERT CONTROL
+        if not self.intrusion_manager.handle_presence_start(event.cam_id):
+            print("[GSM] Alert blocked by cooldown")
             return
 
         numbers = self.sms_service.get_numbers_for_camera(event.cam_id)
@@ -45,8 +46,7 @@ class GSMHandler:
 
         self.queue.put({
             "numbers": numbers,
-            "camera_name": camera_name,
-            "timestamp": event.timestamp
+            "camera_name": camera_name
         })
 
 
@@ -68,11 +68,7 @@ class GSMHandler:
 
     def _send_sms(self, task):
 
-        message = (
-            f"ALERT: Wykryto wtargniecie\n"
-            f"Kamera: {task['camera_name']}\n"
-            f"Czas: {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(task['timestamp']))}"
-        )
+        message = f"ALERT: Wykryto wtargniecie - kamera {task['camera_name']}"
 
         for number in task["numbers"]:
 

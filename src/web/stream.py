@@ -426,10 +426,24 @@ def events_page():
 
     for row in rows:
 
+        start = row["start_time"]
+        end = row["end_time"]
+
+        duration = None
+
+        try:
+
+            if start and end:
+                duration = float(end) - float(start)
+
+        except:
+            duration = None
+
         events.append({
             "camera_id": row["camera_name"],
-            "start_time": row["start_time"],
-            "end_time": row["end_time"]
+            "start_time": start,
+            "end_time": end,
+            "duration": duration
         })
 
     return render_template(
