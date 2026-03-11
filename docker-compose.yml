@@ -1,0 +1,26 @@
+version: "3.9"
+
+services:
+
+  camera-system:
+
+    build: .
+
+    container_name: camera_monitor
+
+    ports:
+      - "5000:5000"
+
+    volumes:
+      - ./recordings:/app/recordings
+      - ./snapshots:/app/snapshots
+      - ./logs:/app/logs
+
+    devices:
+      - "/dev/video0:/dev/video0"
+      - "/dev/video1:/dev/video1"
+      - "/dev/video2:/dev/video2"
+
+    privileged: true
+
+    restart: unless-stopped

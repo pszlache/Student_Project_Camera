@@ -129,6 +129,7 @@ def main():
                 AI_CONFIDENCE
             ),
             event_bus,
+            intrusion_manager,
             AI_FRAME_SKIP,
             PRESENCE_TIMEOUT
         )
