@@ -1,15 +1,16 @@
-# Default command
 default: run
 
 # -------------------------
-# Setup environment
+# Environment setup
 # -------------------------
 
 venv:
-    python -m venv .venv
+    python3 -m venv .venv
 
 install:
-    pip install -r requirements.txt
+    .venv/bin/pip install --upgrade pip
+    .venv/bin/pip install -e .
+    .venv/bin/pip install -e ".[dev]"
 
 setup: venv install
 
@@ -18,27 +19,25 @@ setup: venv install
 # -------------------------
 
 run:
-    python main.py
-
-web:
-    python -m src.web.stream
+    .venv/bin/python main.py
 
 # -------------------------
 # Testing
 # -------------------------
 
 test:
-    pytest tests
+    .venv/bin/pytest
 
 # -------------------------
-# Development tools
+# Code quality
 # -------------------------
-
-format:
-    black src tests
 
 lint:
-    flake8 src
+    .venv/bin/ruff check src
+
+format:
+    .venv/bin/black src
+    .venv/bin/isort src
 
 # -------------------------
 # Utilities

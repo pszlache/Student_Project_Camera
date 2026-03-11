@@ -3,36 +3,36 @@ import signal
 import sys
 import threading
 
-from camera.usb_camera import USBCamera
-from camera.detect import detect_cameras
+from src.camera.usb_camera import USBCamera
+from src.camera.detect import detect_cameras
 
-from motion.motion_detector import MotionDetector
-from ai.person_detector import PersonDetector
+from src.motion.motion_detector import MotionDetector
+from src.ai.person_detector import PersonDetector
 
-from core.repositories.user_repository import UserRepository
-from core.services.notification_service import NotificationService
-from core.services.intrusion_manager import IntrusionManager
-from core.handlers.mail_handler import MailHandler
+from src.core.repositories.user_repository import UserRepository
+from src.core.services.notification_service import NotificationService
+from src.core.services.intrusion_manager import IntrusionManager
+from src.core.handlers.mail_handler import MailHandler
 
-from core.gsm.gsm_client import GSMClient
-from core.services.sms_service import SMSService
-from core.handlers.gsm_handler import GSMHandler
+from src.core.gsm.gsm_client import GSMClient
+from src.core.services.sms_service import SMSService
+from src.core.handlers.gsm_handler import GSMHandler
 
-from web.stream import start_stream, set_shared_cameras
+from src.web.stream import start_stream, set_shared_cameras
 
-from core.events import EventBus
-from core.services.presence_service import PresenceService
+from src.core.events import EventBus
+from src.core.services.presence_service import PresenceService
 
-from core.handlers.db_handler import DBHandler
-from core.handlers.video_handler import VideoRecorderHandler
-from core.handlers.snapshot_handler import SnapshotHandler
+from src.core.handlers.db_handler import DBHandler
+from src.core.handlers.video_handler import VideoRecorderHandler
+from src.core.handlers.snapshot_handler import SnapshotHandler
 
-from core.services.auth_service import AuthService
+from src.core.services.auth_service import AuthService
 
-from logs.db import init_db
+from src.logs.db import init_db
 from config import *
 
-from core.notifications.providers.smtp_provider import SMTPProvider
+from src.core.notifications.providers.smtp_provider import SMTPProvider
 
 
 def main():
@@ -40,6 +40,7 @@ def main():
     print("=== SYSTEM STARTING ===")
 
     #DATABASE
+
     init_db()
 
     auth_service = AuthService()
