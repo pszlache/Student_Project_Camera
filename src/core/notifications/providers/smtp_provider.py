@@ -21,10 +21,11 @@ class SMTPProvider:
         msg.attach(MIMEText(body, "plain"))
 
         try:
+
             if self.use_ssl:
-                server = smtplib.SMTP_SSL(self.host, self.port)
+                server = smtplib.SMTP_SSL(self.host, self.port, timeout=10)
             else:
-                server = smtplib.SMTP(self.host, self.port)
+                server = smtplib.SMTP(self.host, self.port, timeout=10)
                 server.starttls()
 
             server.login(self.username, self.password)
@@ -36,6 +37,8 @@ class SMTPProvider:
             )
 
             server.quit()
+
+            print("[SMTP] Mail sent")
 
         except Exception as e:
             print(f"[SMTPProvider] SMTP error: {e}")

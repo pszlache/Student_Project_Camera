@@ -32,6 +32,7 @@ class GSMHandler:
 
         now = time.time()
 
+        # cooldown protection
         if now - self.last_sms < 10:
             return
 
@@ -49,7 +50,8 @@ class GSMHandler:
 
         self.queue.put({
             "numbers": numbers,
-            "camera_name": camera_name
+            "camera_name": camera_name,
+            "timestamp": event.timestamp
         })
 
 
@@ -71,7 +73,11 @@ class GSMHandler:
 
     def _send_sms(self, task):
 
-        message = f"⚠ ALERT: Wykryto wtargnięcie - kamera {task['camera_name']}"
+        message = (
+            f"ALERT: Wykryto wtargniecie\n"
+            f"Kamera: {task['camera_name']}\n"
+            f"Czas: {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(task['timestamp']))}"
+        )
 
         for number in task["numbers"]:
 

@@ -10,7 +10,7 @@ class RuntimeConfig:
     def update_mail(cls, host, port, username, password):
 
         cls.smtp_host = host
-        cls.smtp_port = port
+        cls.smtp_port = int(port) if port else None
         cls.smtp_username = username
         cls.smtp_password = password
 

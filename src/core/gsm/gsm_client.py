@@ -117,7 +117,7 @@ class GSMClient:
         raise Exception("No SMS prompt")
 
 
-    #SEND SMS
+#SEND SMS
     def send_sms(self, number, message):
 
         if not self.connected:
@@ -129,7 +129,8 @@ class GSMClient:
 
         self._wait_prompt()
 
-        os.write(self.fd, message.encode())
+        # poprawka
+        os.write(self.fd, (message + "\r").encode())
 
         time.sleep(0.2)
 
@@ -142,7 +143,6 @@ class GSMClient:
         print("[GSM] Response:", resp)
 
         return resp
-
 
     #CLOSE
     def close(self):

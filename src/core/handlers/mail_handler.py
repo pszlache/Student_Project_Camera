@@ -85,19 +85,24 @@ class MailHandler:
         #CHECK RUNTIME CONFIG
         cfg = RuntimeConfig.get_mail_config()
 
-        if cfg["host"]:
+        if all([
+            cfg["host"],
+            cfg["port"],
+            cfg["username"],
+            cfg["password"]
+        ]):
+
             self.email_provider.host = cfg["host"]
-
-        if cfg["port"]:
             self.email_provider.port = cfg["port"]
-
-        if cfg["username"]:
             self.email_provider.username = cfg["username"]
-
-        if cfg["password"]:
             self.email_provider.password = cfg["password"]
 
+            print("[MAIL] Using runtime SMTP config")
 
+        else:
+
+            print("[MAIL] Using default SMTP config")
+            
         subject = f"ALERT: Presence detected on camera {task['camera_name']}"
 
         body = (
