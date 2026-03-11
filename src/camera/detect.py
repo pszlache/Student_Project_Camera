@@ -2,7 +2,7 @@ import cv2
 import time
 
 
-#CAMERA DETECTION
+# CAMERA DETECTION
 def detect_cameras(max_index=10, warmup_time=0.2):
 
     cameras = {}
@@ -18,14 +18,14 @@ def detect_cameras(max_index=10, warmup_time=0.2):
             cap.release()
             continue
 
-        #CAMERA WARMUP
+        # CAMERA WARMUP
         time.sleep(warmup_time)
 
         ret, frame = cap.read()
 
         cap.release()
 
-        #INVALID FRAME
+        # INVALID FRAME
         if not ret or frame is None:
             print(f"[CAM DETECT] Camera index {index} returned no frame")
             continue
@@ -36,12 +36,15 @@ def detect_cameras(max_index=10, warmup_time=0.2):
             print(f"[CAM DETECT] Camera index {index} invalid frame size")
             continue
 
+        # IMPORTANT CHANGE
         cameras[cam_id] = {
-            "name": f"Camera{index}",
+            "name": f"Camera {cam_id}",
             "index": index
         }
 
-        print(f"[CAM DETECT] Found camera at index {index}")
+        print(
+            f"[CAM DETECT] Found camera: system_id={cam_id}, device_index={index}"
+        )
 
         cam_id += 1
 

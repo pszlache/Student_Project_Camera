@@ -30,13 +30,8 @@ class GSMHandler:
         if event.type != EventType.PRESENCE_START:
             return
 
-        now = time.time()
-
-        # cooldown protection
-        if now - self.last_sms < 10:
+        if not self.sms_service.intrusion_manager.handle_presence_start(event.cam_id):
             return
-
-        self.last_sms = now
 
         numbers = self.sms_service.get_numbers_for_camera(event.cam_id)
 

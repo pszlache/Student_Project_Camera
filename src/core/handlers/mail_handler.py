@@ -38,6 +38,9 @@ class MailHandler:
         if event.type != EventType.PRESENCE_START:
             return
 
+        if not self.intrusion_manager.handle_presence_start(event.cam_id):
+            return
+
 
         #GET RECIPIENTS
         recipients = self.notification_service.get_recipients_for_camera(
@@ -102,7 +105,7 @@ class MailHandler:
         else:
 
             print("[MAIL] Using default SMTP config")
-            
+
         subject = f"ALERT: Presence detected on camera {task['camera_name']}"
 
         body = (
