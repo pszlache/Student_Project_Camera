@@ -7,12 +7,10 @@ from core.services.runtime_config import RuntimeConfig
 
 class MailHandler:
 
-    def __init__(self, email_provider, notification_service, intrusion_manager, cooldown=60):
+    def __init__(self, email_provider, notification_service):
 
         self.email_provider = email_provider
         self.notification_service = notification_service
-        self.intrusion_manager = intrusion_manager
-        self.cooldown = cooldown
 
         self.queue = queue.Queue()
 
@@ -25,20 +23,8 @@ class MailHandler:
 
     def handle(self, event):
 
-        #PRESENCE END
-        if event.type == EventType.PRESENCE_END:
-
-            if hasattr(event, "cam_id"):
-                self.intrusion_manager.handle_presence_end(event.cam_id)
-
-            return
-
-
         #ONLY START TRIGGERS MAIL
         if event.type != EventType.PRESENCE_START:
-            return
-
-        if not self.intrusion_manager.handle_presence_start(event.cam_id):
             return
 
 
@@ -110,7 +96,7 @@ class MailHandler:
 
         body = (
             f"Intrusion detected.\n\n"
-            f"First camera: {task['camera_name']}\n"
+            f"Camera: {task['camera_name']}\n"
             f"Camera ID: {task['cam_id']}\n"
             f"Timestamp: {task['timestamp']}\n"
         )

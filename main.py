@@ -73,9 +73,7 @@ def main():
 
     mail_handler = MailHandler(
         email_provider,
-        notification_service,
-        intrusion_manager,
-        MAIL_COOLDOWN
+        notification_service
     )
 
     event_bus.register(mail_handler)
@@ -91,8 +89,7 @@ def main():
     # FIX: przekazujemy intrusion_manager
     gsm_handler = GSMHandler(
         gsm_client,
-        sms_service,
-        intrusion_manager
+        sms_service
     )
 
     event_bus.register(gsm_handler)
