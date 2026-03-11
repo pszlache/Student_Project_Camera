@@ -1,5 +1,5 @@
 import sqlite3
-from logs import db
+from src.logs import db
 
 
 class UserRepository:

@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
 
   camera-system:
@@ -14,7 +12,7 @@ services:
     volumes:
       - ./recordings:/app/recordings
       - ./snapshots:/app/snapshots
-      - ./logs:/app/logs
+      - ./logs:/app/src/logs
 
     devices:
       - "/dev/video0:/dev/video0"

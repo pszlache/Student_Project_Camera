@@ -1,8 +1,8 @@
 import threading
 import queue
 
-from core.events import EventType
-from core.services.runtime_config import RuntimeConfig
+from src.core.events import EventType
+from src.core.services.runtime_config import RuntimeConfig
 
 
 class MailHandler:

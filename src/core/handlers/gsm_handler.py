@@ -2,7 +2,7 @@ import time
 import queue
 import threading
 
-from core.events import EventType
+from src.core.events import EventType
 
 
 class GSMHandler:

@@ -1,7 +1,7 @@
 import cv2
 import os
 from datetime import datetime
-from core.events import EventType
+from src.core.events import EventType
 
 
 VIDEO_DIR = "recordings"

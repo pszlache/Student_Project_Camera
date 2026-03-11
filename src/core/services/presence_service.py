@@ -1,6 +1,6 @@
 import time
 
-from core.events import (
+from src.core.events import (
     PresenceStartEvent,
     PresenceEndEvent,
     SnapshotTimerEvent

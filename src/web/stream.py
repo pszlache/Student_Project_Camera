@@ -12,12 +12,12 @@ from flask import (
 )
 from functools import wraps
 from utils.overlay import draw_overlay
-from web.logs import logs_bp
-from core.services.auth_service import AuthService
-from core.repositories.user_repository import UserRepository
-from logs.db import _get_connection
-from core.services.system_state import SystemState
-from core.services.runtime_config import RuntimeConfig
+from src.web.logs import logs_bp
+from src.core.services.auth_service import AuthService
+from src.core.repositories.user_repository import UserRepository
+from src.logs.db import _get_connection
+from src.core.services.system_state import SystemState
+from src.core.services.runtime_config import RuntimeConfig
 
 import sqlite3
 import cv2

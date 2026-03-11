@@ -1,4 +1,4 @@
-from core.events import (
+from src.core.events import (
     EventType,
     SnapshotSavedEvent
 )
