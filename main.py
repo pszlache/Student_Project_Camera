@@ -81,12 +81,16 @@ def main():
     # GSM
     print("[MAIN] Initializing GSM modem")
 
-    gsm_client = GSMClient(GSM_PORT)
-    gsm_client.connect()
+    gsm_client = None
+
+    try:
+        gsm_client = GSMClient(GSM_PORT)
+        gsm_client.connect()
+    except Exception as e:
+        print("[GSM] Modem not available:", e)
 
     sms_service = SMSService(user_repo)
 
-    # FIX: przekazujemy intrusion_manager
     gsm_handler = GSMHandler(
         gsm_client,
         sms_service
@@ -98,8 +102,16 @@ def main():
     detected = detect_cameras()
 
     if not detected:
-        print("No cameras detected")
-        return
+
+        print("[CAM DETECT] No cameras detected - creating virtual cameras")
+        print("[DEMO MODE] Virtual cameras enabled")
+
+        detected = {
+            0: {"name": "Camera 0", "index": None},
+            1: {"name": "Camera 1", "index": None},
+            2: {"name": "Camera 2", "index": None},
+            3: {"name": "Camera 3", "index": None},
+        }
 
     cameras = {}
 
@@ -107,14 +119,18 @@ def main():
 
         print(f"[MAIN] Initializing camera index {cfg['index']}")
 
-        cam = USBCamera(
-            cfg["index"],
-            FRAME_WIDTH,
-            FRAME_HEIGHT,
-            FPS
-        )
+        cam = None
 
-        cam.start()
+        if cfg["index"] is not None:
+
+            cam = USBCamera(
+                cfg["index"],
+                FRAME_WIDTH,
+                FRAME_HEIGHT,
+                FPS
+            )
+
+            cam.start()
 
         presence_service = PresenceService(
             cam_id,
@@ -174,9 +190,15 @@ def main():
                 if not running:
                     break
 
+                cam = data["camera"]
+
+                # DEMO MODE (no camera)
+                if cam is None:
+                    continue
+
                 try:
 
-                    frame = data["camera"].read()
+                    frame = cam.read()
 
                     if frame is None:
                         continue
@@ -191,7 +213,7 @@ def main():
 
                     print("[MAIN] Camera loop error:", e)
 
-            time.sleep(0.01)
+            time.sleep(0.02)
 
     finally:
 
@@ -199,8 +221,13 @@ def main():
 
         for data in cameras.values():
 
+            cam = data["camera"]
+
+            if cam is None:
+                continue
+
             try:
-                data["camera"].stop()
+                cam.stop()
             except:
                 pass
 

@@ -25,6 +25,11 @@ class GSMHandler:
 
         print("[GSM] Handler received event:", event.type)
 
+        # GSM disabled (Docker / no modem)
+        if not self.gsm_client:
+            print("[GSM] GSM client not available")
+            return
+
         if event.type != EventType.PRESENCE_START:
             return
 

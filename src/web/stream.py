@@ -26,6 +26,7 @@ import time
 import os
 import glob
 import json
+import numpy as np
 
 from datetime import timedelta
 
@@ -88,25 +89,37 @@ def set_shared_cameras(cameras):
 
 #STREAM
 def generate_frames(cam_id):
+
+    black_frame = np.zeros((480, 640, 3), dtype=np.uint8)
+
     while True:
 
         data = shared_cameras.get(cam_id)
 
-        if data is None:
-            time.sleep(0.1)
-            continue
+        frame = None
 
-        if not SystemState.cameras_enabled:
-            time.sleep(0.1)
-            continue
+        if data and data["camera"]:
 
-        frame = data["camera"].read()
+            if SystemState.cameras_enabled:
+                frame = data["camera"].read()
 
         if frame is None:
-            time.sleep(0.01)
-            continue
+            frame = black_frame.copy()
 
-        presence_active = data["presence_service"].presence_active
+            cv2.putText(
+                frame,
+                "NO SIGNAL",
+                (180, 240),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                1.2,
+                (255, 255, 255),
+                3
+            )
+
+        presence_active = False
+
+        if data and data["presence_service"]:
+            presence_active = data["presence_service"].presence_active
 
         overlay = draw_overlay(
             frame.copy(),
