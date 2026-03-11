@@ -66,45 +66,50 @@ Provides monitoring functionality via a web interface.
 ```
 PROJECT_1
 │
-├── .git
-├── .gitignore
-│
-├── src
-│   ├── ai
-│   │   └── person_detector.py
-│   │
-│   ├── camera
-│   │   ├── detect.py
-│   │   └── usb_camera.py
-│   │
-│   ├── core
-│   │   ├── events.py
-│   │   ├── handlers/
-│   │   ├── services/
-│   │   └── repositories/
-│   │
-│   ├── motion
-│   │   └── motion_detector.py
-│   │
-│   ├── utils
-│   │   ├── overlay.py
-│   │   └── snapshot.py
-│   │
-│   └── web
-│       ├── templates
-│       ├── static
-│       ├── logs.py
-│       └── stream.py
+├── data
 │
 ├── models
-│   ├── MobileNetSSD_deploy.caffemodel
-│   └── MobileNetSSD_deploy.prototxt
+│ ├── MobileNetSSD_deploy.caffemodel
+│ └── MobileNetSSD_deploy.prototxt
+│
+├── src
+│ │
+│ ├── ai
+│ │ └── person_detector.py
+│ │
+│ ├── camera
+│ │ ├── detect.py
+│ │ └── usb_camera.py
+│ │
+│ ├── core
+│ │ ├── events.py
+│ │ ├── handlers
+│ │ ├── services
+│ │ └── repositories
+│ │
+│ ├── logs
+│ │
+│ ├── motion
+│ │ └── motion_detector.py
+│ │
+│ ├── utils
+│ │
+│ └── web
+│ ├── static
+│ ├── templates
+│ ├── logs.py
+│ └── stream.py
 │
 ├── tests
 │
+├── .gitignore
+├── .pre-commit-config.yaml
+│
 ├── config.py
 ├── main.py
+├── justfile
 ├── pyproject.toml
+├── requirements.txt
 └── README.md
 ```
 
