@@ -29,7 +29,7 @@ from src.core.handlers.snapshot_handler import SnapshotHandler
 
 from src.core.services.auth_service import AuthService
 
-from src.logs.db import init_db
+from src.database.db import init_db
 from config import *
 
 from src.core.notifications.providers.smtp_provider import SMTPProvider

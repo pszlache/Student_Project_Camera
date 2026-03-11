@@ -15,7 +15,7 @@ from utils.overlay import draw_overlay
 from src.web.logs import logs_bp
 from src.core.services.auth_service import AuthService
 from src.core.repositories.user_repository import UserRepository
-from src.logs.db import _get_connection
+from src.database.db import _get_connection
 from src.core.services.system_state import SystemState
 from src.core.services.runtime_config import RuntimeConfig
 

@@ -1,4 +1,4 @@
-from src.logs.db import log_presence_start, log_presence_end
+from src.database.db import log_presence_start, log_presence_end
 from src.core.events import EventType
 
 

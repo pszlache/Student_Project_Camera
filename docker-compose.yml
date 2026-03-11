@@ -12,7 +12,7 @@ services:
     volumes:
       - ./recordings:/app/recordings
       - ./snapshots:/app/snapshots
-      - ./logs:/app/src/logs
+      - ./logs:/app/logs
 
     devices:
       - "/dev/video0:/dev/video0"

@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template_string
-from src.logs.db import _get_connection
+from src.database.db import _get_connection
 import sqlite3
 
 logs_bp = Blueprint("logs", __name__)

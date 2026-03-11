@@ -5,7 +5,7 @@ import tempfile
 import pytest
 
 from core.repositories.user_repository import UserRepository
-from logs import db as db_module
+from database import db as db_module
 
 
 # Fixture: Temporary Database

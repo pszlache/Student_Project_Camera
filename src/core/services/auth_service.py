@@ -1,6 +1,6 @@
 import bcrypt
 import sqlite3
-from src.logs.db import DB_PATH, log_login_attempt
+from src.database.db import DB_PATH, log_login_attempt
 
 
 class AuthService:
